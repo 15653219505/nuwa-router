@@ -1,0 +1,1798 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+
+<script>window.__NUWA_STANDALONE__=true</script><head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="light dark">
+<meta name="theme-color" id="themeColorMeta" content="#f5efe0">
+<!-- 允许「添加到主屏幕」后以独立窗口打开；不覆盖 status-bar-style，
+     否则浅色主题下状态栏文字会看不清 -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="format-detection" content="telephone=no">
+<!-- 内联 SVG 图标：避免每次加载都 404 一次 favicon，同时让标签页/主屏幕图标是「女」 -->
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='7' fill='%23bd7711'/%3E%3Ctext x='16' y='23' font-size='20' text-anchor='middle' fill='%231a1200'%3E%E5%A5%B3%3C/text%3E%3C/svg%3E">
+<title>女娲路由 · Nuwa Perspective Router</title>
+<style>
+  /* ============================================================
+     设计令牌。所有颜色都收拢在这里，两套主题只是换一组取值。
+     命名沿用原有的 --gold/--gold2/--fg 等，避免大面积改动选择器。
+     --gold  = 结构强调色（边框、焦点环、引用线）
+     --gold2 = 该主题下**文字级**强调色（浅色主题更深、深色主题更亮，都为了对比度）
+     ============================================================ */
+  :root{
+    /* ---------- 白天：米黄 ---------- */
+    --bg:#f5efe0;        /* 页面底色 */
+    --bg2:#fffdf7;       /* 面板 / 卡片面 */
+    --bg3:#efe7d4;       /* 输入框 / 浮起面 */
+    --hover:#e9dfc7;     /* 悬停面 */
+    --sel:#e9dcb9;       /* 选中项底色 */
+    --line:#e3d9c1;      /* 常规描边 */
+    --line2:#cdbd9c;     /* 强描边 / 滚动条 */
+    --fg:#33301f;        /* 主文字（强对比） */
+    --fg2:#5d5440;       /* 次文字 */
+    --fg3:#7c7259;       /* 弱文字 / 标签 */
+    --strong:#241f12;    /* 正文加粗 */
+    --gold:#a9761a;      /* 结构强调 */
+    --gold2:#7d5610;     /* 文字强调 */
+    --jade:#2b7355;      /* 成功 / 高置信 */
+    --red:#a83a38;       /* 错误 / 危险 */
+    --blue:#2a6ba0;      /* 链接 */
+    --hair:#dcd0b0;      /* 滚动条滑块 */
+    --overlay:rgba(58,48,28,.42);
+    --shadow:0 10px 30px rgba(84,66,28,.13);
+    /* 金色品牌件：两套主题一致，保证品牌感稳定。
+       取值经过对比度核算：--gold-ink 在渐变最暗端 --gold-g2 上仍达 5.2:1（WCAG AA）。 */
+    --gold-g1:#e2c063; --gold-g2:#bd7711; --gold-ink:#1a1200;
+    /* 正文里的各类面 */
+    --u-bub1:#f3e7c8; --u-bub2:#ebddb6; --u-bub-b:#dcc99b;   /* 用户气泡 */
+    --card1:#fdf8ea; --card2:#f8f1dd; --card-b:#dfcda4;      /* 路由卡片 */
+    --pick-bg:#f3e9d0; --pick-b:#dfcda4;                     /* 技能芯片 */
+    --code-bg:#f2e8d1; --code-b:#ded0ab; --code-fg:#7d5610;  /* 行内代码 */
+    --pre-bg:#f4eeda; --pre-fg:#443d2c;                      /* 代码块 */
+    --th-bg:#eee3c7; --tr-alt:#fbf6e9;                       /* 表头 / 隔行 */
+    --ok-bg:#e2efe7; --ok-b:#a5c9b6;
+    --bad-bg:#fbe8e5; --bad-b:#e5bdb5;
+    --note:#8a5a10;                                          /* 边界提示 */
+    --radius:10px;
+    --font:-apple-system,BlinkMacSystemFont,"Segoe UI","PingFang SC","Hiragino Sans GB","Microsoft YaHei",sans-serif;
+  }
+  /* ---------- 夜晚：暖黑 + 金 ---------- */
+  :root[data-theme="dark"]{
+    --bg:#15120c;
+    --bg2:#1d1913;
+    --bg3:#262016;
+    --hover:#2e2718;
+    --sel:#332a18;
+    --line:#3a3222;
+    --line2:#4c4129;
+    --fg:#eee6d4;
+    --fg2:#b8ad94;
+    --fg3:#8a806a;
+    --strong:#fff8e8;
+    --gold:#dcb654;
+    --gold2:#e9c96e;
+    --jade:#6cc79e;
+    --red:#e2908c;
+    --blue:#7fb9ea;
+    --hair:#3a3223;
+    --overlay:rgba(0,0,0,.64);
+    --shadow:0 10px 30px rgba(0,0,0,.46);
+    --u-bub1:#332a19; --u-bub2:#2a2214; --u-bub-b:#4a3d24;
+    --card1:#221d12; --card2:#1b1710; --card-b:#463a22;
+    --pick-bg:#272114; --pick-b:#463a22;
+    --code-bg:#262017; --code-b:#40361f; --code-fg:#e0c07a;
+    --pre-bg:#100e09; --pre-fg:#d8cfba;
+    --th-bg:#262017; --tr-alt:#1a1710;
+    --ok-bg:#1c2e26; --ok-b:#2f5a48;
+    --bad-bg:#2e1b19; --bad-b:#5a322c;
+    --note:#d9a441;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{height:100%}
+  html{-webkit-text-size-adjust:100%;text-size-adjust:100%}
+  body{
+    background:var(--bg);color:var(--fg);font-family:var(--font);
+    font-size:14px;line-height:1.65;overflow:hidden;overscroll-behavior:none;
+    transition:background-color .25s ease, color .25s ease;
+  }
+  /* 触控设备去掉 300ms 点击延迟与双指缩放误触 */
+  button,.chip,.skill,.rec,.hbtn,.pick,a{touch-action:manipulation}
+  .scrim{position:fixed;inset:0;background:var(--overlay);z-index:55;display:none}
+  /* 切主题时让面层一起过渡；只加在这些大面上，避免干扰 .skill/.rec 自己的悬停过渡 */
+  header,footer,aside,.modal,.msg.bot .bubble,.route,.md pre,.md th,.md tr:nth-child(even) td{
+    transition:background-color .25s ease, border-color .25s ease;
+  }
+  button{font-family:inherit;cursor:pointer;border:none;background:none;color:inherit;font-size:inherit}
+  input,select,textarea{font-family:inherit;font-size:inherit}
+  ::-webkit-scrollbar{width:9px;height:9px}
+  ::-webkit-scrollbar-track{background:transparent}
+  ::-webkit-scrollbar-thumb{background:var(--hair);border-radius:5px}
+  ::-webkit-scrollbar-thumb:hover{background:var(--line2)}
+
+  /* ---------- 布局 ---------- */
+  /* 三档高度：老浏览器 100vh → 支持 dvh 的用 dvh（避开移动端地址栏伸缩）
+     → 键盘弹出时由 JS 用 visualViewport 写入 --app-h 精确对齐 */
+  #app{display:flex;flex-direction:column;height:100vh;height:100dvh;height:var(--app-h,100dvh)}
+  header{
+    display:flex;align-items:center;gap:14px;padding:10px 18px;
+    border-bottom:1px solid var(--line);background:var(--bg2);flex-shrink:0;
+  }
+  .brand{display:flex;align-items:center;gap:9px;font-weight:600;letter-spacing:.3px;white-space:nowrap}
+  .brand .glyph{
+    width:26px;height:26px;border-radius:7px;flex-shrink:0;
+    background:linear-gradient(135deg,var(--gold-g1),var(--gold-g2));
+    display:grid;place-items:center;font-size:15px;color:var(--gold-ink);
+  }
+  .brand small{color:var(--fg3);font-weight:400;font-size:12px}
+  header .spacer{flex:1}
+  .hbtn{
+    padding:6px 13px;border-radius:7px;border:1px solid var(--line);
+    background:var(--bg3);color:var(--fg2);font-size:13px;transition:.15s;
+    white-space:nowrap;
+  }
+  .hbtn:hover{background:var(--hover);color:var(--fg);border-color:var(--line2)}
+  .hbtn.primary{background:linear-gradient(135deg,var(--gold-g1),var(--gold-g2));color:var(--gold-ink);border-color:transparent;font-weight:600}
+  .hbtn.primary:hover{filter:brightness(1.06)}
+
+  main{flex:1;display:flex;min-height:0}
+
+  /* ---------- 侧栏公共 ---------- */
+  aside{
+    background:var(--bg2);display:flex;flex-direction:column;min-height:0;
+  }
+  aside.skills-pane{width:300px;flex-shrink:0;border-right:1px solid var(--line)}
+  aside.history{width:252px;flex-shrink:0;border-left:1px solid var(--line)}
+
+  .pane-head{
+    padding:12px 15px;border-bottom:1px solid var(--line);
+    font-size:12px;color:var(--fg3);letter-spacing:.6px;text-transform:uppercase;
+    display:flex;align-items:center;justify-content:space-between;
+  }
+  .pane-head .count{color:var(--gold);font-weight:600}
+  .skills{overflow-y:auto;flex:1;padding:8px}
+  .skill{
+    padding:9px 11px;border-radius:8px;cursor:pointer;margin-bottom:3px;
+    border:1px solid transparent;transition:.12s;
+  }
+  .skill:hover{background:var(--bg3)}
+  .skill.on{background:var(--sel);border-color:var(--gold);box-shadow:inset 2px 0 0 var(--gold)}
+  .skill .row1{display:flex;align-items:center;gap:7px}
+  .skill .ico{font-size:14px;width:17px;text-align:center;flex-shrink:0}
+  .skill .nm{font-weight:600;font-size:13.5px}
+  .skill .grp{margin-left:auto;font-size:10.5px;color:var(--fg3);white-space:nowrap}
+  .skill .desc{font-size:11.5px;color:var(--fg3);margin-top:2px;padding-left:24px;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .lockhint{font-size:10.5px;color:var(--gold);padding-left:24px;margin-top:2px}
+  .skill .info{
+    margin-left:4px;color:var(--fg3);font-size:13px;line-height:1;
+    padding:1px 5px;border-radius:5px;flex-shrink:0;
+  }
+  .skill .info:hover{background:var(--hover);color:var(--gold2)}
+  .skill .grp{margin-left:auto}
+  .skill .info{margin-left:6px}
+
+  /* ---------- 中间对话 ---------- */
+  section.chat{flex:1;display:flex;flex-direction:column;min-width:0;min-height:0}
+  #scroll{flex:1;overflow-y:auto;padding:24px 0}
+  .wrap{max-width:820px;margin:0 auto;padding:0 24px}
+
+  .welcome{text-align:center;padding:48px 24px 24px;color:var(--fg2)}
+  .welcome .big{font-size:22px;color:var(--fg);margin-bottom:6px;font-weight:600}
+  .welcome .sub{font-size:13px;color:var(--fg3);margin-bottom:26px}
+  .flow{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-bottom:26px}
+  .step{
+    background:var(--bg2);border:1px solid var(--line);border-radius:8px;
+    padding:10px 14px;font-size:12px;color:var(--fg2);text-align:left;min-width:130px;
+  }
+  .step b{display:block;color:var(--gold2);font-size:11px;margin-bottom:3px;letter-spacing:.5px}
+  .chips{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:640px;margin:0 auto}
+  .chip{
+    padding:7px 13px;border-radius:16px;border:1px solid var(--line);
+    background:var(--bg2);color:var(--fg2);font-size:12.5px;transition:.15s;
+  }
+  .chip:hover{border-color:var(--gold);color:var(--gold2)}
+
+  .msg{margin-bottom:22px}
+  .msg.user{display:flex;justify-content:flex-end}
+  .msg.user .bubble{
+    background:linear-gradient(135deg,var(--u-bub1),var(--u-bub2));
+    border:1px solid var(--u-bub-b);border-radius:12px 12px 3px 12px;
+    padding:10px 15px;max-width:82%;white-space:pre-wrap;word-break:break-word;
+  }
+  .msg.bot .bubble{
+    background:var(--bg2);border:1px solid var(--line);border-radius:12px 12px 12px 3px;
+    padding:14px 18px;word-break:break-word;
+  }
+
+  /* 路由卡片 */
+  .route{
+    border:1px solid var(--card-b);background:linear-gradient(180deg,var(--card1),var(--card2));
+    border-radius:10px;padding:11px 14px;margin-bottom:9px;font-size:12.5px;
+  }
+  .route .rh{display:flex;align-items:center;gap:8px;color:var(--gold2);font-weight:600;font-size:12px;letter-spacing:.4px}
+  .route .ptype{
+    margin-left:auto;font-weight:400;color:var(--fg3);font-size:11px;
+    border:1px solid var(--line);border-radius:10px;padding:1px 8px;
+  }
+  .route .picks{display:flex;flex-wrap:wrap;gap:6px;margin-top:8px}
+  .pick{
+    display:flex;align-items:center;gap:6px;background:var(--pick-bg);border:1px solid var(--pick-b);
+    border-radius:7px;padding:4px 10px;font-size:12px;
+  }
+  .pick .cf{color:var(--jade);font-size:10.5px;font-variant-numeric:tabular-nums}
+  .route .why{color:var(--fg2);margin-top:8px;font-size:12px;line-height:1.55}
+  .route .why b{color:var(--fg)}
+  .route .note{
+    color:var(--note);margin-top:7px;font-size:11.5px;
+    border-left:2px solid var(--gold);padding-left:9px;
+  }
+  .spin{
+    display:inline-block;width:11px;height:11px;border:2px solid var(--pick-b);
+    border-top-color:var(--gold2);border-radius:50%;animation:sp .7s linear infinite;
+  }
+  @keyframes sp{to{transform:rotate(360deg)}}
+  .err{
+    border:1px solid var(--bad-b);background:var(--bad-bg);border-radius:9px;padding:11px 14px;
+    color:var(--red);font-size:12.5px;margin-bottom:9px;
+  }
+  .err b{color:var(--red)}
+
+  /* markdown */
+  .md h1,.md h2,.md h3{margin:16px 0 7px;line-height:1.35;font-weight:600}
+  .md h1{font-size:19px}
+  .md h2{font-size:16.5px;color:var(--gold2)}
+  .md h3{font-size:14.5px}
+  .md h1:first-child,.md h2:first-child,.md h3:first-child{margin-top:0}
+  .md p{margin:8px 0}
+  .md ul,.md ol{margin:8px 0 8px 21px}
+  .md li{margin:3px 0}
+  .md li>p{margin:2px 0}
+  .md code{
+    background:var(--code-bg);border:1px solid var(--code-b);border-radius:4px;
+    padding:1px 5px;font-size:12.5px;font-family:ui-monospace,Consolas,Monaco,monospace;color:var(--code-fg);
+  }
+  .md pre{
+    background:var(--pre-bg);border:1px solid var(--line);border-radius:8px;
+    padding:12px 14px;overflow-x:auto;margin:10px 0;
+  }
+  .md pre code{background:none;border:none;padding:0;color:var(--pre-fg);font-size:12.5px;line-height:1.55}
+  .md blockquote{
+    border-left:3px solid var(--gold);padding:3px 0 3px 13px;
+    margin:10px 0;color:var(--fg2);font-style:normal;
+  }
+  .md table{border-collapse:collapse;margin:11px 0;font-size:12.5px;width:100%;display:block;overflow-x:auto}
+  .md th,.md td{border:1px solid var(--line);padding:6px 11px;text-align:left;vertical-align:top}
+  .md th{background:var(--th-bg);color:var(--gold2);font-weight:600;white-space:nowrap}
+  .md tr:nth-child(even) td{background:var(--tr-alt)}
+  .md a{color:var(--blue);text-decoration:none}
+  .md a:hover{text-decoration:underline}
+  .md hr{border:none;border-top:1px solid var(--line);margin:16px 0}
+  .md strong{color:var(--strong);font-weight:600}
+
+  /* ---------- 输入区 ---------- */
+  footer{border-top:1px solid var(--line);background:var(--bg2);padding:12px 0 14px;flex-shrink:0}
+  .inputbox{
+    max-width:820px;margin:0 auto;padding:0 24px;display:flex;gap:10px;align-items:flex-end;
+  }
+  #q{
+    flex:1;background:var(--bg3);border:1px solid var(--line);border-radius:10px;
+    color:var(--fg);padding:11px 14px;resize:none;max-height:170px;min-height:44px;
+    line-height:1.6;outline:none;transition:border-color .15s;
+  }
+  #q:focus{border-color:var(--gold)}
+  #q::placeholder{color:var(--fg3)}
+  #send{
+    background:linear-gradient(135deg,var(--gold-g1),var(--gold-g2));color:var(--gold-ink);
+    border-radius:10px;padding:0 20px;height:44px;font-weight:600;flex-shrink:0;transition:.15s;
+  }
+  #send:hover:not(:disabled){filter:brightness(1.12)}
+  #send:disabled{opacity:.4;cursor:not-allowed}
+  .inputmeta{
+    max-width:820px;margin:7px auto 0;padding:0 24px;
+    display:flex;justify-content:space-between;font-size:11.5px;color:var(--fg3);
+  }
+  .inputmeta label{display:flex;align-items:center;gap:5px;cursor:pointer;user-select:none}
+  .inputmeta input[type=checkbox]{accent-color:var(--gold);cursor:pointer}
+
+  /* ---------- 设置弹层 ---------- */
+  .overlay{
+    position:fixed;inset:0;background:var(--overlay);display:none;
+    place-items:center;z-index:50;backdrop-filter:blur(3px);padding:20px;
+  }
+  .overlay.on{display:grid}
+  .modal{
+    background:var(--bg2);border:1px solid var(--line);border-radius:14px;
+    width:min(540px,100%);max-height:88vh;overflow-y:auto;padding:24px 26px;
+  }
+  .modal h2{font-size:17px;margin-bottom:4px}
+  .modal .hint{font-size:12px;color:var(--fg3);margin-bottom:20px;line-height:1.6}
+  .field{margin-bottom:15px}
+  .field label{display:block;font-size:12.5px;color:var(--fg2);margin-bottom:6px;font-weight:500}
+  .field label span{color:var(--fg3);font-weight:400}
+  .field input,.field select{
+    width:100%;background:var(--bg3);border:1px solid var(--line);border-radius:8px;
+    color:var(--fg);padding:9px 12px;outline:none;
+  }
+  .field input:focus,.field select:focus{border-color:var(--gold)}
+  .row2{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+  .modal .actions{display:flex;gap:9px;justify-content:flex-end;margin-top:22px;flex-wrap:wrap}
+  /* 诊断输出：等宽字体、可滚、默认隐藏 */
+  .diagout{
+    display:none;margin-top:16px;padding:11px 13px;border:1px solid var(--line);
+    border-radius:8px;background:var(--pre-bg);color:var(--pre-fg);
+    font-size:11.5px;line-height:1.65;white-space:pre-wrap;word-break:break-word;
+    max-height:240px;overflow:auto;
+    font-family:ui-monospace,Consolas,Monaco,monospace;
+  }
+  .diagout.on{display:block}
+  .status{font-size:12px;margin-right:auto;align-self:center;color:var(--fg3)}
+  .status.ok{color:var(--jade)}
+  .status.bad{color:var(--red)}
+
+  /* ---------- 技能详情弹层 ---------- */
+  .prof h3{font-size:15px;color:var(--gold2);margin:17px 0 7px}
+  .prof h3:first-of-type{margin-top:14px}
+  .prof .tags{display:flex;flex-wrap:wrap;gap:6px;margin:7px 0}
+  .tag{
+    font-size:11.5px;border-radius:6px;padding:2px 9px;
+    background:var(--pick-bg);border:1px solid var(--pick-b);color:var(--fg2);
+  }
+  .tag.good{background:var(--ok-bg);border-color:var(--ok-b);color:var(--jade)}
+  .tag.bad{background:var(--bad-bg);border-color:var(--bad-b);color:var(--red)}
+  .prof ul{margin:6px 0 6px 20px;font-size:13px}
+  .prof li{margin:4px 0}
+  .prof .flowline{font-size:12.5px;color:var(--fg2);background:var(--bg3);
+    border-left:2px solid var(--gold);padding:9px 13px;border-radius:0 7px 7px 0;margin:9px 0}
+  .cutoff{font-size:11.5px;color:var(--fg3);margin-top:14px;border-top:1px solid var(--line);padding-top:11px}
+
+  /* ---------- 右侧历史记录 ---------- */
+  .histlist{overflow-y:auto;flex:1;padding:8px}
+  .rec{
+    padding:8px 10px;border-radius:8px;cursor:pointer;margin-bottom:4px;
+    border:1px solid transparent;transition:.12s;position:relative;
+  }
+  .rec:hover{background:var(--bg3)}
+  .rec.on{background:var(--sel);border-color:var(--gold)}
+  .rec .rq{
+    font-size:12.5px;font-weight:600;line-height:1.4;padding-right:16px;
+    display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;
+  }
+  .rec .rm{font-size:10.5px;color:var(--fg3);margin-top:4px;display:flex;align-items:center;gap:6px}
+  .rec .rskills{color:var(--gold2);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .rec .del{
+    position:absolute;top:5px;right:5px;width:18px;height:18px;border-radius:5px;
+    display:none;place-items:center;font-size:13px;line-height:1;color:var(--fg3);
+  }
+  .rec:hover .del{display:grid}
+  .rec .del:hover{background:var(--bad-bg);color:var(--red)}
+
+  /* 删除确认气泡：跟随点击位置出现在光标右侧，位置由 JS 夹回视口内 */
+  .confirmpop{
+    position:fixed;left:0;top:0;z-index:70;
+    display:none;align-items:center;gap:7px;
+    padding:6px 8px;border-radius:9px;
+    border:1px solid var(--line2);background:var(--bg2);
+    box-shadow:var(--shadow);white-space:nowrap;font-size:12px;
+  }
+  .confirmpop.on{display:flex}
+  .confirmpop .cptext{color:var(--fg2);padding-left:3px}
+  .histlist .empty{color:var(--fg3);font-size:12px;text-align:center;padding:28px 14px;line-height:1.8}
+  .histfoot{padding:8px;border-top:1px solid var(--line)}
+  .stor{font-size:10px;border-radius:9px;padding:1px 7px;border:1px solid var(--line);color:var(--fg3);white-space:nowrap}
+  .stor.server{color:var(--jade);border-color:var(--ok-b)}
+  .stor.local{color:var(--note);border-color:var(--pick-b)}
+  .hbtn.tiny{padding:4px 9px;font-size:11.5px;border-radius:6px}
+  .hbtn.danger{color:var(--red);border-color:var(--bad-b)}
+  .hbtn.danger:hover{background:var(--bad-bg);border-color:var(--red);color:var(--red)}
+
+  /* ============================================================
+     移动端。要点：
+       · 两侧栏改为抽屉（从左右滑入）+ 遮罩，点遮罩可关
+       · 输入类控件字号必须 >=16px，否则 iOS 聚焦时会自动放大整页
+       · 补 safe-area 内边距，否则底部输入区会被 Home 指示条压住
+       · 触控目标整体加大到 ~44px
+     ============================================================ */
+  .mobonly,.histonly{display:none}
+  @media(max-width:820px){
+    aside.skills-pane,aside.history{
+      position:fixed;top:0;bottom:0;z-index:60;
+      width:min(84vw,320px);
+      padding-top:env(safe-area-inset-top);
+      padding-bottom:env(safe-area-inset-bottom);
+      box-shadow:var(--shadow);
+      transition:transform .22s ease;
+    }
+    aside.skills-pane{left:0;transform:translateX(-100%)}
+    aside.skills-pane.open{transform:none}
+    aside.history{right:0;transform:translateX(100%)}
+    aside.history.open{transform:none}
+    .scrim.on{display:block}
+    .mobonly,.histonly{display:block}
+
+    /* 触控目标：从 ~30px 提到 ~44px；按钮文字在窄屏隐藏，只留图标 */
+    .hbtn{padding:10px 12px;font-size:13.5px}
+    .hbtn.tiny{padding:8px 12px}
+    .lbl{display:none}
+    .skill{padding:12px 12px}
+    .skill .info{padding:4px 9px}
+    .rec{padding:11px 12px}
+    .rec .del{display:grid;width:28px;height:28px;font-size:16px;top:7px;right:7px}
+    .rec .rq{padding-right:26px}
+    .chip{padding:10px 15px;font-size:13.5px}
+
+    /* 输入控件 16px，避免 iOS 聚焦缩放 */
+    #q{font-size:16px;padding:12px 14px;min-height:48px}
+    #send{height:48px;padding:0 22px}
+    .field input,.field select{font-size:16px;padding:11px 12px}
+
+    /* 390px 宽度下按钮文字会把 header 挤到换行（实测高 113px），
+       所以移动端只留图标 + 品牌标记，不显示文字 */
+    header{padding:10px 12px;gap:6px}
+    .brandtext{display:none}
+    footer{padding:10px 0 calc(12px + env(safe-area-inset-bottom))}
+    .inputbox,.inputmeta{padding:0 14px}
+    .wrap{padding:0 14px}
+    #scroll{padding:16px 0}
+    .msg.user .bubble{max-width:88%}
+    .msg.bot .bubble{padding:12px 14px}
+    .flow{gap:6px}
+    .step{min-width:0;flex:1 1 44%;padding:9px 11px}
+    /* 第三张卡片独占一行时不要被拉伸成满宽，否则和上面两张不协调 */
+    .step:last-child{flex-grow:0}
+    .modal{width:100%;max-height:92dvh;padding:20px 18px}
+  }
+
+  /* 横屏 / 键盘弹出后的矮视口：别让头尾把可用高度吃光 */
+  @media(max-height:520px){
+    header{padding:6px 12px}
+    .brand .glyph{width:22px;height:22px;font-size:13px}
+    .brand small{display:none}
+    footer{padding:6px 0 calc(8px + env(safe-area-inset-bottom))}
+    #q{min-height:38px;max-height:84px}
+    #send{height:38px}
+    .inputmeta{display:none}
+    #scroll{padding:10px 0}
+    .welcome{padding:18px 14px 10px}
+    .welcome .big{font-size:18px}
+    .welcome .flow{display:none}
+    .msg{margin-bottom:14px}
+  }
+</style>
+<script>
+/* 主题引导：必须在首次绘制前定好 data-theme，否则深色系统下会先闪一下白。
+   逻辑与页面里的 applyTheme() 保持一致（pref: auto | light | dark）。 */
+(function () {
+  var pref = 'auto'
+  try { pref = localStorage.getItem('nuwa.theme') || 'auto' } catch (e) {}
+  var dark = pref === 'dark' ||
+    (pref === 'auto' && window.matchMedia &&
+     window.matchMedia('(prefers-color-scheme: dark)').matches)
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light')
+  // 顺手把浏览器地址栏 / 状态栏颜色也定好（此时 <style> 已解析，能读到令牌）
+  try {
+    var bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim()
+    var meta = document.getElementById('themeColorMeta')
+    if (bg && meta) meta.setAttribute('content', bg)
+  } catch (e) {}
+})()
+</script>
+
+<link rel="manifest" href="./manifest.webmanifest">
+<link rel="apple-touch-icon" href="./apple-touch-icon.png">
+<meta name="apple-mobile-web-app-title" content="女娲路由">
+</head>
+<body>
+<div id="app">
+  <header>
+    <button class="hbtn mobonly" onclick="toggleDrawer('aside.skills-pane')" aria-label="技能库">☰</button>
+    <div class="brand">
+      <div class="glyph">女</div>
+      <div class="brandtext">女娲路由 <small>· 按问题类型调度思维框架</small></div>
+    </div>
+    <div class="spacer"></div>
+    <button class="hbtn" id="themeBtn" onclick="cycleTheme()">🌗</button>
+    <button class="hbtn" id="lockBtn" style="display:none"></button>
+    <button class="hbtn" onclick="newThread()" aria-label="新对话">＋<span class="lbl"> 新对话</span></button>
+    <button class="hbtn histonly" onclick="toggleDrawer('aside.history')" aria-label="历史记录">🕘</button>
+    <button class="hbtn primary" onclick="openSettings()" aria-label="设置">⚙<span class="lbl"> 设置</span></button>
+  </header>
+
+  <main>
+    <aside class="skills-pane">
+      <div class="pane-head">
+        <span>技能库 <span class="count" id="skillCount">15</span></span>
+        <span style="font-size:10px">点击可锁定</span>
+      </div>
+      <div class="skills" id="skillList"></div>
+    </aside>
+
+    <section class="chat">
+      <div id="scroll"><div class="wrap" id="stream"></div></div>
+      <footer>
+        <div class="inputbox">
+          <textarea id="q" rows="1" placeholder="说出你的问题…"></textarea>
+          <button id="send">提问</button>
+        </div>
+        <div class="inputmeta">
+          <label><input type="checkbox" id="showRoute" checked> 显示路由过程</label>
+          <span id="modelTag">—</span>
+        </div>
+      </footer>
+    </section>
+
+    <aside class="history">
+      <div class="pane-head">
+        <span>历史记录 <span class="count" id="histCount">0</span></span>
+        <span class="stor local" id="histMode">…</span>
+      </div>
+      <div class="histlist" id="histList"></div>
+      <div class="histfoot">
+        <button class="hbtn tiny danger" onclick="clearHistory()">清空全部历史</button>
+      </div>
+    </aside>
+  </main>
+  <div class="scrim" id="scrim" onclick="closeDrawers()"></div>
+  <div class="confirmpop" id="confirmPop" role="dialog" aria-label="删除确认">
+    <span class="cptext">删除这条？</span>
+    <button class="hbtn tiny danger" id="cpYes" onclick="confirmDelete()">确认</button>
+    <button class="hbtn tiny" id="cpNo" onclick="closeConfirm()">取消</button>
+  </div>
+</div>
+
+<!-- 设置弹层 -->
+<div class="overlay" id="settingsOverlay">
+  <div class="modal">
+    <h2>设置</h2>
+    <p class="hint">
+      密钥只保存在本机浏览器 localStorage，不会发往除你填写的接口地址以外的任何地方。<br>
+      支持任何 OpenAI 兼容接口（DeepSeek / OpenAI / 各类中转）。
+    </p>
+    <div class="field">
+      <label>接口地址 <span>（结尾通常带 /v1）</span></label>
+      <input id="fBase" placeholder="https://api.deepseek.com/v1">
+    </div>
+    <div class="field">
+      <label>API Key</label>
+      <input id="fKey" type="password" placeholder="sk-...">
+    </div>
+    <div class="row2">
+      <div class="field">
+        <label>模型</label>
+        <input id="fModel" placeholder="deepseek-chat">
+      </div>
+      <div class="field">
+        <label>温度 <span>(0–2)</span></label>
+        <input id="fTemp" type="number" min="0" max="2" step="0.1" value="0.7">
+      </div>
+    </div>
+    <pre class="diagout" id="diagOut"></pre>
+    <div class="actions">
+      <span class="status" id="testStatus"></span>
+      <button class="hbtn" onclick="diagnose()">诊断</button>
+      <button class="hbtn" onclick="testConnection()">测试连接</button>
+      <button class="hbtn" onclick="closeSettings()">取消</button>
+      <button class="hbtn primary" onclick="saveSettings()">保存</button>
+    </div>
+  </div>
+</div>
+
+<!-- 技能详情弹层 -->
+<div class="overlay" id="profOverlay" onclick="if(event.target===this)closeProfile()">
+  <div class="modal prof" id="profBody"></div>
+</div>
+
+<script>
+/* =========================================================================
+   女娲路由 · Nuwa Perspective Router
+   单文件应用。内置 15 个女娲预置技能（14 位人物 + 1 个主题技能）的
+   心智模型 / 决策启发式 / 诚实边界，来自 nuwa-skill/examples/ 的实际内容。
+
+   三段式流程（对应女娲方法论）：
+     ① 路由   —— 判断问题类型，匹配技能，且必须检查 avoidFor 与诚实边界
+     ② 执行   —— 用选中技能的心智模型与表达 DNA 作答
+     ③ 边界   —— 触及局限时必须显式声明（女娲核心原则）
+   ========================================================================= */
+
+const KB = [
+{
+  id:'steve-jobs', name:'乔布斯', ico:'🍎', grp:'产品/创业',
+  desc:'聚焦即说不、端到端控制',
+  bestFor:['产品取舍','砍功能线','定义体验标准','判断"够不够 insanely great"','硬件×软件×服务的整合决策'],
+  avoidFor:['需要组织软性管理的情境（管理风格照搬会伤人）','2011 年后的技术判断（AI/云/社交媒体）'],
+  models:[
+    '聚焦即说不（Focus = Saying No）——聚焦不是选做什么，是拒绝一百个好主意',
+    '端到端控制（The Whole Widget）——不控制硬件的人最终会输',
+    '连点成线（Connecting the Dots）——只能向后连，不能向前推',
+    '死亡过滤器（Death as Decision Tool）——"如果今天是我最后一天"',
+    '现实扭曲力场（Reality Distortion Field）——把不可能变成迟一点的可能',
+    '技术与人文的交汇（Technology × Liberal Arts）'
+  ],
+  heuristics:['二元判断：不是 insanely great 就是垃圾','体验优先于规格','说"不"是核心能力','只做能同时控制的三层'],
+  boundary:'**不能替代 Jobs 的创造力和产品直觉**——真正的"Jobs 级判断力"来自几十年实践积累和天生敏感度，无法复制。**公开表达 vs 真实想法存在差距**——他是演讲大师和营销天才，公开表达经过精心设计，提炼的是他公开展示的思维模式，不一定等于内心真实决策过程。**已故人物无法更新**——Jobs 于 2011 年去世，对 2011 年之后的技术发展（AI、云计算的爆发、社交媒体的异化）没有公开表态，任何推断都是推测。**管理风格的争议性**——极端直接、二元判断、情感强度在硅谷特定环境下有效，直接照搬到其他文化和组织环境中可能造成严重伤害。**幸存者偏差**——我们记住了成功决策（砍产品线、iPhone），但他也做过很多错误决策（最初否认 Lisa 女儿、延误癌症手术），这个 Skill 可能放大英明、淡化错误。',
+  cutoff:'2026-04-05 · 30+ 一手和权威二手来源'
+},
+{
+  id:'paul-graham', name:'Paul Graham', ico:'✍️', grp:'产品/创业',
+  desc:'写作即思考、超线性回报',
+  bestFor:['早期创业','写作与表达','选题','判断一个人或一个点子','给年轻人的人生/职业建议'],
+  avoidFor:['非技术创业','非英语市场','非精英背景的路径规划'],
+  models:[
+    'Writing = Thinking——写不清楚就是想不清楚',
+    'Taste as Cognitive Instrument——品味是认知工具，不是审美偏好',
+    'Iterative Discovery——创业不是执行已知计划，是发现未知需求',
+    'Superlinear Returns——顶尖表现带来不成比例的回报',
+    'Independent Thinking as Survival——独立思考是生存问题，不是智力问题'
+  ],
+  heuristics:['先写出来再想','做不可规模化的事','关注"谁需要这个"而非"我能做什么"','警惕被"应该"驱动'],
+  boundary:'**鸡性别鉴定师问题**——最核心的能力（在 10 分钟面试里判断创始人是否值得投资）是一种经过训练的直觉，**这种直觉无法被提炼成规则**。这个 Skill 能模拟分析框架，但无法复制实际判断力。**Silicon Valley 中心视角**——框架建立在硅谷创业生态上，对非技术创业、非英语市场、非精英背景的适用性会打折扣，而且"我自己可能没有充分意识到这个局限"。**2005-2014 经验可能过时**——对创业的很多理解来自 YC 前 10 年，当时环境（小团队、bootstrapping、web app）与今天 AI+大资本差异很大，框架本质可能仍有效但具体战术需更新。**公开表达 vs 真实想法**——"我几乎从不说 I was wrong"，立场变化通常以新 essay 悄悄调整，或说"世界变了"而非"我错了"，公开表达可能比真实想法更自信、更一致。',
+  cutoff:'2026-04-05'
+},
+{
+  id:'zhang-yiming', name:'张一鸣', ico:'📐', grp:'产品/创业',
+  desc:'延迟满足、把问题投影到高维',
+  bestFor:['组织设计','信息效率','全球化','数据飞轮','人才与决策机制'],
+  avoidFor:['需要外部可验证的管理学结论','政治敏感维度'],
+  models:[
+    '延迟满足感是认知边界，不是道德品质——它决定你能看到多远',
+    '把表象问题投影到高维简单问题——不优化漏斗，先质疑漏斗',
+    '算法是工具，同理心才是根（警惕人才过拟合）',
+    '负规模效应与 Context not Control',
+    '逃逸平庸的重力——组织会自发滑向平庸'
+  ],
+  heuristics:['先问"这是不是真问题"','看信息效率而非努力程度','用机制而非意愿解决重复问题','警惕成功经验的过拟合'],
+  boundary:'**他自己说「外部总结的字节成功学都有问题」**——本 Skill 是同类化简，请保持怀疑。**2021-2024 年信息极度匮乏**——隐退约四年几乎无公开表达，这段时间的思想演变是推测。**四个言行不一致的案例已记录**：教育"三年不盈利"食言；"算法中性"被迫放弃；卸任原因双重解读；Context not Control vs 实际决策集权。**Context not Control 的原创性存疑**——Netflix 的 Reed Hastings 也用过类似表述。**政治维度无法从外部确认**——卸任是真实个人意愿还是政治压力规避，两种解读都有证据，无法证伪。**表达风格基于文字记录**——公开表达不多，很多"风格特征"来自有限样本。',
+  cutoff:'2026-04-06'
+},
+{
+  id:'elon-musk', name:'马斯克', ico:'🚀', grp:'产品/创业',
+  desc:'渐近极限法、五步算法',
+  bestFor:['成本工程','制造与硬件','有明确物理约束的技术问题','第一性原理砍成本','垂直整合判断'],
+  avoidFor:['政治','社交媒体治理','公共关系','需要制度性知识和社会协调的领域'],
+  models:[
+    '渐近极限法（Asymptotic Limit Thinking）——先算物理极限，再看实际路径是极限的几倍',
+    '五步算法（The Algorithm）——删>简化>优化>加速>自动化，顺序不能反',
+    '存在主义锚定（Existential Anchoring）——用"人类存续"当决策标尺',
+    '垂直整合即物理必然（Vertical Integration as Physics）',
+    '快速迭代 > 完美计划（Iterate Fast, Fail Fast）'
+  ],
+  heuristics:['先质疑需求本身该不该存在','最蠢的错误是优化一个不该存在的东西','删到必须加回来为止','用原型代替争论'],
+  boundary:'**物理领域强，社会领域弱**——思维模型在火箭、汽车、卫星等有明确物理约束的领域极其有效，但在政治、社交媒体治理、公共关系等需要制度性知识和社会协调的领域**系统性失效**，用这个 Skill 分析后一类问题时需格外警惕。**存在「公开表达 vs 真实想法」的差距**——他声称"公开说的就是私下想的"，但法庭记录和行为分析显示这不完全成立，公开发言既是真实想法也是策略性市场/舆论操作工具。**时间线预估不可信**——评估项目时间线需乘以 2-3 倍，他自己承认是"喊 FSD 狼来了的男孩"。**管理风格争议大**——前员工评价高度两极化。**政治立场在快速变化**——2008 支持民主党，2024 成为特朗普最大支持者。',
+  cutoff:'2026-04-04'
+},
+{
+  id:'munger', name:'芒格', ico:'🧠', grp:'投资/风险',
+  desc:'多元思维模型、逆向思考',
+  bestFor:['投资判断','看人','多学科交叉决策','避开愚蠢','识别激励结构'],
+  avoidFor:['科技与平台经济','网络效应分析','AI 与加密','中国市场判断'],
+  models:[
+    '多元思维模型（Latticework of Mental Models）——用多学科格栅而非单一锤子',
+    '逆向思考（Inversion）——反过来想，总是反过来想',
+    'Lollapalooza 效应——多个偏误同向叠加时的极端后果',
+    '能力圈 + 意见资格制——没资格就别发表意见',
+    '激励机制决定一切——看激励，不要听承诺'
+  ],
+  heuristics:['逆向切入：先问怎么会失败','三筐分类法：可投/不可投/太难','激励诊断：谁的奶酪被动了','坐在屁股上：不行动也是决策','葡萄干与粪便法则：一个致命缺陷毁掉一切'],
+  boundary:'**科技盲区无法修补**——芒格体系在评估网络效应、平台经济、AI 等领域存在结构性缺陷，系统性错过 Google、Amazon，对加密和 AI 持极端否定，分析科技问题需补充其他视角。**中国认知有偏**——对中国的理解受李录和 BYD 成功的强烈影响，导致在阿里巴巴上犯了重大错误。**思想 > 业绩**——影响力主要在思想层面，实际晚年投资记录（Daily Journal）并不突出，**不要把"想得好"等同于"做得好"**。**选择性理性**——熟悉领域极度理性，陌生领域可能极度情绪化。**信息截止**——芒格 2023-11-28 去世（99 岁），此后的市场变化和技术发展不在其经验范围内。**幸存者偏差**——集中投资在伯克希尔成功了，但他的 Wheeler Munger 基金在 1973-1974 年因同样策略崩溃，成功被过度传播、失败被淡化。',
+  cutoff:'2023-11-28（逝世）· 另含 25 种人类误判心理学'
+},
+{
+  id:'taleb', name:'塔勒布', ico:'🦢', grp:'投资/风险',
+  desc:'反脆弱、非对称风险',
+  bestFor:['风险管理','不确定性下的决策','识别脆弱系统','杠铃策略','判断谁在承担后果'],
+  avoidFor:['需要精确预测的场景','需要长期稳定承诺的规划'],
+  models:[
+    '非对称风险思维——看下行，不看中枢预期',
+    '反脆弱偏好——从波动中获益而非仅承受波动',
+    'Skin in the Game 检验——谁在承担后果，谁才有发言权',
+    '林迪效应筛选——存在得越久，预期寿命越长',
+    'Via Negativa（减法优先）——靠移除而非添加来改进',
+    '领域特异性——不要跨领域搬运结论'
+  ],
+  heuristics:['预防原则：不确定时行动，而非等待','杠铃策略：极端保守 + 极端冒险','遍历性检验：会破产吗？','火鸡问题：过去的稳定不能预测未来','框架重置：不回答烂问题，重新定义问题','凸性试错：保留上行，限制下行'],
+  boundary:'**塔勒布的创造力无法蒸馏**——核心价值不在已知框架的应用，而在面对新问题时的即兴洞察，而这恰恰最不可结构化。**公开表达 ≠ 真实想法**——The Spectator 采访揭示他的 Twitter 战都是提前一周以上准备的，朋友说他本人"可能是个害羞的人"，线上人格和线下人格可能存在巨大差距。**他在不擅长的领域会出错**——在进化生物学、哥德尔定理等领域被指出明显错误。**500 页的 100 页洞察**——核心贡献被广泛认可，但围绕这些洞察的大量自我吹嘘和人身攻击会稀释信号。**不可证伪的自我保护系统**——所有批评者都可以被贴上 IYI 或"没有 skin in the game"的标签，**这使得他的框架在某些场景下更像信仰而非工具**。',
+  cutoff:'2026-04-04'
+},
+{
+  id:'naval', name:'Naval Ravikant', ico:'⚖️', grp:'投资/风险',
+  desc:'杠杆、特定知识、欲望即合同',
+  bestFor:['财富路径设计','职业选择','人生取舍','该用哪种杠杆','减少内耗'],
+  avoidFor:['完全从零、尚无生存保障的人','需要具体执行步骤的战术问题'],
+  models:[
+    '杠杆思维（Leverage）——劳动力/资本/代码与媒体，边际成本递减的是后者',
+    '特定知识（Specific Knowledge）——无法通过培训获得，只能通过追随好奇心和热情积累',
+    '欲望即合同（Desire as Contract with Unhappiness）——每个欲望都是跟不快乐签的合同',
+    '重新定义术（Redefine the Word, the Conclusion Follows）——改变定义就改变了结论',
+    '痛苦→系统重构（Pain to Systemic Solution）——把创伤转成规则'
+  ],
+  heuristics:['无需许可原则：选不需要别人批准的路','日历测试：做起来会忘记时间吗','纠结即否定：纠结本身就是答案','欲望审计：同时追几个欲望？','行为优先原则：看行为不看言辞'],
+  boundary:'**无法预测 Naval 面对全新问题的反应**——心智模型可以推断方向，但具体判断取决于他那个瞬间的直觉，那是写不进 Skill 的部分。**公开表达 ≠ 真实想法**——他在推文中是 Oracle 模式（极度确定），私下可能完全不同，我们只能建模他的公开人格。**Epinions 创伤的影响可能被低估**——"反建制""个人主权""不信任机构"的姿态，很大程度上源于 2003 年被 VC 和联合创始人欺骗的真实创伤，不是纯理论推导，而是情感驱动的世界观。**他的框架假设较高的起点**——Specific knowledge + leverage 的框架**对已经有一定资源和网络的人最有效，对完全从零开始的人，可能缺少了"如何先活下来"的部分**。**Zcash 利益冲突提醒**——有推广自己有财务利益项目的记录，crypto/Web3 相关观点需额外打折。',
+  cutoff:'2026-04'
+},
+{
+  id:'feynman', name:'费曼', ico:'🔬', grp:'学习/思考',
+  desc:'命名≠理解、反自欺',
+  bestFor:['学新东西','检验自己是否真懂','拆穿"货物崇拜"','把复杂东西讲清楚','识别自欺'],
+  avoidFor:['哲学','社会科学','需要提出最深刻问题的场景'],
+  models:[
+    '命名 ≠ 理解——知道名字不等于知道机制',
+    '反自欺原则——你最容易骗的人是自己',
+    '不确定性是力量——承认不知道才可能知道',
+    '具象化思考——看不懂就换成一个具体的例子',
+    '深度游戏——因为好玩才做，不是因为有回报'
+  ],
+  heuristics:['货物崇拜检测：形式对了但核心没动？','演示 > 论证','现实优先于叙事','从具体到一般','12 个问题过滤器','直接验证，别信转述'],
+  boundary:'**性别问题**——费曼在对待女性方面有明确记录的问题行为（自传中物化女性的描述、FBI 档案中的家暴指控）。此 Skill 提取的是他的认知方法论，**不为其个人行为辩护**。**自我神话化**——盖尔曼等同行指出费曼的"随性反叛"形象是精心经营的，此 Skill 中的"费曼视角"包含了这种表演性成分。**领域偏见**——他对哲学和社会科学持公开蔑视态度，用费曼视角审视这些领域时需意识到这个盲点。**计算者 vs 思想家**——戴森晚年评价费曼是 "great calculator" 而非 "great physicist"，**此 Skill 更擅长帮你"解决问题"，而非"提出最深刻的问题"**。**历史人物**——费曼 1988 年去世，其认知框架未经当代 AI、互联网、社交媒体时代检验。',
+  cutoff:'1988-02-15（逝世）'
+},
+{
+  id:'karpathy', name:'Andrej Karpathy', ico:'🧪', grp:'学习/思考',
+  desc:'Software X.0、锯齿状智能',
+  bestFor:['AI 技术路线判断','AI 工程实践','学习方法','判断某个 AI 能力是否真可用'],
+  avoidFor:['需要稳定长期立场的问题（他更新极快）'],
+  models:[
+    'Software X.0 范式思维——Software 1.0 人写规则 / 2.0 数据学规则 / 3.0 提示词编程',
+    '构建即理解——不亲手搭一遍就不算懂',
+    'LLM = 召唤的幽灵——不是数据库检索，是分布式的记忆与统计',
+    'March of Nines 工程现实主义——99% 到 99.9% 的成本远高于 0% 到 90%',
+    '锯齿状智能（Jagged Intelligence）——能力分布不连续，不要线性外推',
+    'Iron Man 套装 > Iron Man 机器人——增强人，而非替代人'
+  ],
+  heuristics:['先问"这能力是锯齿的哪一面"','用 demo 而非 benchmark 判断可用性','警惕把 90% 当成 100%','关注最后一个 9 的成本'],
+  boundary:'**时效性**——Karpathy 的技术立场更新极快（他 2025 年 10 月还说 Agent 无用，12 月就转为 80% 使用），本 Skill 基于 2026 年 4 月的信息，此后的动态未被捕捉。**公开表达 vs 真实想法**——他公开表达的内容未必代表全部立场，在 Tesla 的内部决策（如雷达争议）从未被完整披露。**不能替代他的创造力**——他有命名新概念的天赋（vibe coding、Software 2.0），这是无法从调研中蒸馏出来的能力，**不要指望本 Skill 能预测他下一个概念是什么**。**推断标注**——凡说"基于模型推断"的地方，请结合当前信息验证。',
+  cutoff:'2026-04-05'
+},
+{
+  id:'ilya', name:'Ilya Sutskever', ico:'🌀', grp:'学习/思考',
+  desc:'压缩即理解、安全-能力纠缠',
+  bestFor:['AI 方向判断','研究品味','scaling 与安全的权衡','判断一个技术路线是否"优雅"'],
+  avoidFor:['SSI 内部进展','需要高频公开信息支撑的判断'],
+  models:[
+    '压缩即理解（Compression = Understanding）——预测得越好说明理解得越深',
+    '规模是工具而非原则（Scale as Instrument, Not Principle）',
+    '安全-能力纠缠（Safety-Capability Entanglement）——二者不可分开解决',
+    '超级学习者而非全知数据库（The Superintelligent Learner）',
+    '沉默是信息建筑（Silence as Information Architecture）——不说也是一种表达',
+    '研究审美（Research Aesthetics）——好的研究方向有可感知的"美"'
+  ],
+  heuristics:['先问"这方法在压缩什么"','区分工具性进展与原则性进展','安全不能作为能力之后的外挂','用审美筛选研究方向'],
+  boundary:'**SSI 的技术方向完全不公开**——Skill 无法模拟他在 SSI 内部的思考。**公开表达 vs 私下信念可能有巨大差距**——"Feel the AGI"仪式和 Twitter 上的 "it may be" 属于两个不同的 Ilya。**对齐思想被严肃批评者认为缺乏深度**——Zvi Mowshowitz 评价 "relatively shallow in key ways"，**这个批评可能是对的**。**2026 年 1-4 月 SSI 近乎零信息输出**——任何关于 SSI 进展的推测都缺乏基础。**不能预测他面对全新问题的反应**——思维框架可以提供方向，但真正的创造力无法被 Skill 捕捉。',
+  cutoff:'2026-04-05'
+},
+{
+  id:'mrbeast', name:'MrBeast', ico:'🎬', grp:'增长/传播',
+  desc:'CTR×AVD、零无聊时刻',
+  bestFor:['YouTube 内容创作','标题与缩略图','留存曲线','内容工业化生产'],
+  avoidFor:['B站/抖音/公众号（算法与用户行为不同，需翻译而非照搬）','零预算创作者的直接套用'],
+  models:[
+    'CTR × AVD 方程式——点击率乘平均观看时长，两个变量乘出来的才是分发',
+    '零无聊时刻（No Dull Moments）——任何一秒的无聊都在流失观众',
+    '阶梯递进（Stair-Stepping）——每个段落都要比上一段更强',
+    '简单概念 × 极端执行——概念要一句话说清，执行要极端到没人愿意跟',
+    '全额再投资飞轮——把收入全投回内容，靠规模而非利润率赢',
+    '创意省钱（Creativity Saves Money）——用创意替代预算'
+  ],
+  heuristics:['一句话测试：能一句话说清吗','自点击测试：自己会点吗','100% 再投资原则','前 30 秒法则','标题-缩略图互补：不要重复信息','传达 > 内容'],
+  boundary:'**YouTube ≠ 所有平台**——方法论对 YouTube 优化最深，B站、抖音、公众号的算法和用户行为不同，**需要翻译而非照搬**。**预算差距**——他的单视频 $400 万，大多数创作者预算是 $0，核心原则通用但具体执行方式需要根据预算调整。**英语市场 ≠ 中文市场**——标题公式在英语 YouTube 上验证过，中文标题的节奏、用词、文化梗完全不同。**慈善争议未解决**——慈善视频被学术论文批评为 "poverty porn" 和 "white saviorism"，这个批评有道理但他也在真帮人，**这个张力是真实的**。**员工待遇是真实问题**——极致标准确实导致了团队过劳，这不是一个已解决的问题。',
+  cutoff:'2026-04'
+},
+{
+  id:'sun-yuchen', name:'孙宇晨', ico:'📣', grp:'增长/传播',
+  desc:'注意力套利、叙事覆盖',
+  bestFor:['理解注意力经济的运作机制','识别营销叙事如何被制造','分析"争议即流量"的结构'],
+  avoidFor:['作为行为指南（明确禁止）','任何需要长期信誉的场景'],
+  models:[
+    '注意力套利（Attention Arbitrage）——在注意力定价错配处套利',
+    '叙事覆盖（Narrative Override）——用新叙事覆盖旧事实',
+    '身份杠杆（Identity Leverage）——把身份本身当资产抵押',
+    '场景切换矩阵（Context Switching）——同一套话术在不同场景换皮',
+    '快速复制 + 品牌溢价（Copy, Then Brand）',
+    '金钱万能钥匙（Money as Universal Solvent）'
+  ],
+  heuristics:['先制造争议再收割注意力','把不利叙事转成新叙事','在不同受众面前切换身份'],
+  boundary:'**此 Skill 不是行为指南**——孙宇晨的多项操作涉及法律指控（SEC 起诉、洗售交易、未注册证券发行）。**理解其思维模式不等于应该模仿其行为**。**公开表达 vs 真实想法有巨大鸿沟**——他是所有 perspective skill 中"表演性"最强的人物，公开言论的可信度需要大幅打折。**中文世界的信息有系统性缺失**——排除知乎和微信公众号后，中文圈的民间叙事覆盖不完整。**不能预测面对全新威胁的反应**——模型基于已知行为提炼，面对未曾经历的权力结构可能失效。',
+  cutoff:'2026-04-07 · 6 维度调研共 1528 行'
+},
+{
+  id:'trump', name:'特朗普', ico:'🎯', grp:'增长/传播',
+  desc:'万物皆交易、不可预测性即权力',
+  bestFor:['预判他的行为','谈判筹码分析','传播与舆论机制','谈判中的施压结构'],
+  avoidFor:['纯政治意识形态领域（种族、宗教政策）','需要稳定预期的长期规划'],
+  models:[
+    '万物皆交易（Everything Is A Deal）——所有关系都可还原为交易',
+    '有效夸大（Truthful Hyperbole）——夸张不是谎言，是注意力工具',
+    '不可预测性即权力（Unpredictability As Power）',
+    '受害者叙事即燃料（Victimhood As Fuel）',
+    '零和赢（Zero-Sum Winning）——你赢就是我输',
+    '观众第一，现实第二（Audience First, Reality Second）'
+  ],
+  heuristics:['先问"他的筹码是什么"','看基本盘情绪而非政策逻辑','把让步包装成胜利','保持选项开放以维持施压'],
+  boundary:'**公开声明 ≠ 真实意图**——声明和实际政策存在系统性差距（关税暂停是最近的案例），Skill 能模拟公开逻辑但无法准确预测私下判断。**不可预测性是真实存在的**——他的一部分"不可预测"不是策略，就是真的随机，Skill 能提高预判准确率但不能消除根本的不确定性。**国内政治约束难以追踪**——实际决策受国会共和党人、金主网络、司法约束影响，这些因素变化快、信息不完整。**认知状态**——部分分析者认为他的思维和表达模式在 2020 年后出现变化。**非政治商业决策**——对商业谈判的预判准确率高；**对纯政治意识形态领域（如种族、宗教政策）预判准确率较低**，因为驱动因素更多是基本盘情绪而非他本人的一贯逻辑。',
+  cutoff:'2026-04'
+},
+{
+  id:'zhangxuefeng', name:'张雪峰', ico:'🎓', grp:'现实选择',
+  desc:'社会筛子论、就业倒推法',
+  bestFor:['普通家庭的升学选择','专业选择','就业导向职业规划','阶层现实的冷静评估'],
+  avoidFor:['家境优越','追求学术','创业方向','需要长期主义判断的人'],
+  models:[
+    '社会筛子论——教育系统首先是筛选机制，其次才是培养机制',
+    '选择 > 努力——方向错了，努力只是加速偏离',
+    '就业倒推法——从四年后的就业市场倒推今天的选择',
+    '阶层现实主义——承认起点差异，不做无谓的自我归因',
+    '争议即传播——极端表达是传播策略的一部分'
+  ],
+  heuristics:['先问"四年后谁要你"','看就业数据而非专业名称','普通家庭不要赌小概率路径'],
+  boundary:'**观点有明确的适用范围**——适用于普通家庭、就业导向的教育选择。**对于家境优越、追求学术、创业方向的人，我的建议可能反而是束缚**。**信息有时效性**——推荐的专业和行业基于当时的就业数据，但市场在变，**AI 时代的就业格局和我在世时已经不同**。**极端表达不等于完整观点**——直播和短视频的"金句"是传播版本，深度采访中展现过更多 nuance。**台前和台后可能不同**——镜头前豁达不怕，员工说私下"其实很害怕"。**商业行为和教育理念之间有张力**——万元级服务、流量驱动模式，和"不要被忽悠"的教导之间存在矛盾。',
+  cutoff:'2026-04-05（生前全部公开言论 + 去世后追忆报道）'
+},
+{
+  id:'x-mentor', name:'X导师', ico:'𝕏', grp:'增长/传播',
+  desc:'X/Twitter 运营全栈（主题技能）',
+  bestFor:['写推文 / Thread','选题、找灵感','审阅已写内容','增长策略','账号诊断'],
+  avoidFor:['中文平台为主的运营','需要长期稳定算法假设的策略'],
+  models:[
+    '主题技能：蒸馏的不是某个人，而是一个领域的方法论',
+    '全链路：选题 → 写作 → 审阅 → 增长 → 账号诊断',
+    '场景路由：不同类型的问题走不同的执行规则',
+    'Checkpoint 机制：输出前必答 3 问再发'
+  ],
+  heuristics:['写推文前必答 3 问','给增长建议前必答 3 问','出报告前必答 3 问'],
+  boundary:'**算法时效性**——基于 2026 年 4 月前数据，权重可能已变化。**幸存者偏差**——方法论来自已成功者，看不到失败案例。**英文市场为主**——中文在 X 上的传播规律可能不同。**AI 赛道特殊性**——变化极快，热点响应策略需实时调整。**个人因素**——内容质量、专业深度、持续性无法被替代。**平台风险**——X 本身在变化，单一平台策略存在风险。',
+  cutoff:'2026-04-06 · 6 份报告共 2475 行'
+}
+];
+
+/* =========================== 状态 =========================== */
+const LS_S='nuwa.settings', LS_H='nuwa.history', LS_R='nuwa.records';
+const HIST_API = '/nuwa-history';   // 宿主侧历史接口；不可用时自动回退 localStorage
+let histMode = 'local';             // 'server' = 存宿主侧文件；'local' = 回退 localStorage
+let S = {baseUrl:'https://api.deepseek.com/v1', apiKey:'', model:'deepseek-chat', temp:0.7};
+let history = [];          // 当前对话的上下文 [{role, content}]
+let records = [];          // 右侧历史栏的记录 [{id, ts, q, a, route, picks}]
+let activeId = null;       // 正在回看的记录 id；null = 新对话
+let locked = null;         // 锁定的技能 id
+let busy = false;
+let confirmFor = null;     // 待确认删除的记录 id（确认气泡开着时才有值）
+
+const $ = s => document.querySelector(s);
+const scrollBox = () => $('#scroll');
+
+/* =========================== Markdown =========================== */
+function esc(s){return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;')}
+function inline(s){
+  s = esc(s);
+  const codes = [];
+  s = s.replace(/`([^`]+)`/g, (m,a)=>{codes.push(a);return '\u0000'+(codes.length-1)+'\u0000'});
+  s = s.replace(/\*\*([^*]+)\*\*/g,'<strong>$1</strong>');
+  s = s.replace(/(^|[^*\w])\*([^*\n]+)\*/g,'$1<em>$2</em>');
+  s = s.replace(/\[([^\]]+)\]\((https?:\/\/[^)\s]+)\)/g,'<a href="$2" target="_blank" rel="noopener">$1</a>');
+  s = s.replace(/\u0000(\d+)\u0000/g,(m,i)=>'<code>'+codes[i]+'</code>');
+  return s;
+}
+function md(src){
+  const lines = String(src||'').replace(/\r/g,'').split('\n');
+  let out='', i=0;
+  const isTableSep = s => /^\s*\|?[\s:|-]*-[\s:|-]*\|?\s*$/.test(s) && s.includes('-');
+  while(i<lines.length){
+    let L = lines[i];
+    // 代码块
+    if(/^\s*```/.test(L)){
+      const body=[]; i++;
+      while(i<lines.length && !/^\s*```/.test(lines[i])){body.push(lines[i]);i++}
+      i++;
+      out+='<pre><code>'+esc(body.join('\n'))+'</code></pre>';
+      continue;
+    }
+    // 表格
+    if(L.includes('|') && i+1<lines.length && isTableSep(lines[i+1])){
+      const cells = r => r.replace(/^\s*\|/,'').replace(/\|\s*$/,'').split('|').map(c=>c.trim());
+      const head = cells(L); i+=2;
+      let t='<table><thead><tr>'+head.map(h=>'<th>'+inline(h)+'</th>').join('')+'</tr></thead><tbody>';
+      while(i<lines.length && lines[i].includes('|') && lines[i].trim()!==''){
+        t+='<tr>'+cells(lines[i]).map(c=>'<td>'+inline(c)+'</td>').join('')+'</tr>';
+        i++;
+      }
+      out+=t+'</tbody></table>';
+      continue;
+    }
+    // 标题
+    let m = L.match(/^(#{1,4})\s+(.*)$/);
+    if(m){ const lv=Math.min(m[1].length,3); out+='<h'+lv+'>'+inline(m[2])+'</h'+lv+'>'; i++; continue; }
+    // 分隔线
+    if(/^\s*([-*_])\s*\1\s*\1[\s\-*_]*$/.test(L)){ out+='<hr>'; i++; continue; }
+    // 引用
+    if(/^\s*>/.test(L)){
+      const body=[];
+      while(i<lines.length && /^\s*>/.test(lines[i])){ body.push(lines[i].replace(/^\s*>\s?/,'')); i++; }
+      out+='<blockquote>'+md(body.join('\n'))+'</blockquote>';
+      continue;
+    }
+    // 列表
+    if(/^\s*([-*+]|\d+\.)\s+/.test(L)){
+      const ord = /^\s*\d+\./.test(L);
+      let t = ord?'<ol>':'<ul>';
+      while(i<lines.length && /^\s*([-*+]|\d+\.)\s+/.test(lines[i])){
+        t += '<li>'+inline(lines[i].replace(/^\s*([-*+]|\d+\.)\s+/,''))+'</li>';
+        i++;
+      }
+      out += t+(ord?'</ol>':'</ul>');
+      continue;
+    }
+    // 空行
+    if(L.trim()===''){ i++; continue; }
+    // 段落
+    const para=[];
+    while(i<lines.length && lines[i].trim()!=='' &&
+          !/^\s*(#{1,4}\s|>|```|([-*+]|\d+\.)\s)/.test(lines[i]) &&
+          !(lines[i].includes('|') && i+1<lines.length && isTableSep(lines[i+1]))){
+      para.push(lines[i]); i++;
+    }
+    out += '<p>'+inline(para.join('\n')).replace(/\n/g,'<br>')+'</p>';
+  }
+  return out;
+}
+
+/* =========================== 渲染 =========================== */
+function renderSkills(){
+  const box = $('#skillList');
+  box.innerHTML = KB.map(k=>`
+    <div class="skill ${locked===k.id?'on':''}" data-id="${k.id}">
+      <div class="row1">
+        <span class="ico">${k.ico}</span>
+        <span class="nm">${k.name}</span>
+        <span class="grp">${k.grp}</span>
+        <span class="info" data-info="${k.id}" title="查看这个技能的完整内容">ⓘ</span>
+      </div>
+      <div class="desc">${k.desc}</div>
+      ${locked===k.id?'<div class="lockhint">🎯 已锁定 · 每次提问都用它</div>':''}
+    </div>`).join('');
+  $('#skillCount').textContent = KB.length;
+  box.querySelectorAll('.skill').forEach(el=>{
+    el.onclick = ()=>{
+      const id = el.dataset.id;
+      locked = (locked===id) ? null : id;
+      renderSkills(); updateLockBtn();
+      autoCloseDrawers();
+    };
+  });
+  box.querySelectorAll('.info').forEach(el=>{
+    el.onclick = (ev)=>{ ev.stopPropagation(); openProfile(el.dataset.info); autoCloseDrawers(); };
+  });
+}
+function updateLockBtn(){
+  const b=$('#lockBtn');
+  if(locked){
+    const k=KB.find(x=>x.id===locked);
+    b.style.display='block';
+    // 窄屏下省掉「（点击解锁）」，否则这个按钮自己就会把 header 撑爆
+    b.textContent = isNarrow() ? ('🎯 ' + k.name) : ('🎯 ' + k.name + '（点击解锁）');
+    b.title = '已锁定 ' + k.name + '，点击解锁';
+    b.onclick=()=>{locked=null;renderSkills();updateLockBtn()};
+  }
+  else b.style.display='none';
+}
+
+/* 技能详情 */
+function openProfile(id){
+  const k = KB.find(x=>x.id===id); if(!k) return;
+  $('#profBody').innerHTML = `
+    <h2>${k.ico} ${k.name}</h2>
+    <p class="hint" style="margin-bottom:0">${k.grp} · ${k.desc}</p>
+    <h3>什么场景值得用</h3>
+    <div class="tags">${k.bestFor.map(t=>`<span class="tag good">${t}</span>`).join('')}</div>
+    <h3>明确不该用它的时候</h3>
+    <div class="tags">${(k.avoidFor||['—']).map(t=>`<span class="tag bad">${t}</span>`).join('')}</div>
+    <h3>核心心智模型</h3>
+    <ul>${k.models.map(m=>`<li>${md(m)}</li>`).join('')}</ul>
+    <h3>决策启发式</h3>
+    <ul>${k.heuristics.map(h=>`<li>${md(h)}</li>`).join('')}</ul>
+    <h3>诚实边界</h3>
+    <div class="flowline">${md(k.boundary)}</div>
+    <div class="cutoff">调研截止：${k.cutoff}</div>
+    <div class="actions"><button class="hbtn" onclick="closeProfile()">关闭</button></div>`;
+  $('#profOverlay').classList.add('on');
+}
+function closeProfile(){ $('#profOverlay').classList.remove('on'); }
+
+function welcome(){
+  $('#stream').innerHTML = `
+  <div class="welcome">
+    <div class="big">女娲 · 按问题类型调度思维框架</div>
+    <div class="sub">不是角色扮演。是先用对的人的认知操作系统想一遍，再告诉你他看不到什么。</div>
+    <div class="flow">
+      <div class="step"><b>① 路由</b>判断问题类型，匹配技能，检查适用边界</div>
+      <div class="step"><b>② 执行</b>用心智模型与决策启发式作答</div>
+      <div class="step"><b>③ 边界</b>触及局限必须显式声明</div>
+    </div>
+    <div class="chips">
+      <button class="chip" data-q="我们的 SaaS 产品获客成本太高了，怎么降？">获客成本太高怎么降</button>
+      <button class="chip" data-q="我同时想做自媒体、写书、做独立开发，精力完全不够">三个方向精力不够</button>
+      <button class="chip" data-q="我想判断一下现在做 AI Agent 创业是不是好时机">AI Agent 创业时机</button>
+      <button class="chip" data-q="孩子想学新闻学，我该支持吗？">孩子想学新闻学</button>
+      <button class="chip" data-q="我手上有一笔钱，该不该 all in 一个高波动资产？">该不该 all in 高波动资产</button>
+      <button class="chip" data-q="怎么才算真正搞懂一个技术概念？">怎么才算真正搞懂</button>
+    </div>
+  </div>`;
+  $('#stream').querySelectorAll('.chip').forEach(b=>{
+    b.onclick = ()=>{ $('#q').value = b.dataset.q; send(); };
+  });
+}
+
+function routeCard(r, pending){
+  if(!r) return '';
+  const picks = (r.picks||[]).map(p=>{
+    const k = KB.find(x=>x.id===p.id);
+    const nm = k ? k.ico+' '+k.name : p.id;
+    const cf = (typeof p.confidence==='number') ? Math.round(p.confidence*100)+'%' : '';
+    return `<span class="pick">${nm}${cf?`<span class="cf">${cf}</span>`:''}</span>`;
+  }).join('');
+  return `<div class="route">
+    <div class="rh">🧭 女娲路由 ${pending?'<span class="spin"></span>':''}
+      ${r.problemType?`<span class="ptype">${esc(r.problemType)}</span>`:''}</div>
+    ${picks?`<div class="picks">${picks}</div>`:''}
+    ${r.why?`<div class="why">${md(r.why)}</div>`:''}
+    ${r.note?`<div class="note">⚠️ ${esc(r.note)}</div>`:''}
+  </div>`;
+}
+
+function addMsg(role, html, cls){
+  const d = document.createElement('div');
+  d.className = 'msg '+(cls||role);
+  d.innerHTML = html;
+  $('#stream').appendChild(d);
+  return d;
+}
+function botShell(){
+  const d = document.createElement('div');
+  d.className = 'msg bot';
+  d.innerHTML = '<div id="routeSlot"></div><div class="bubble md" id="ansSlot"></div>';
+  $('#stream').appendChild(d);
+  return {route: d.querySelector('#routeSlot'), ans: d.querySelector('#ansSlot')};
+}
+function toBottom(){ const s=scrollBox(); s.scrollTop = s.scrollHeight; }
+
+/* =========================== LLM 调用 =========================== */
+function endpoint(){
+  let b = (S.baseUrl||'').trim().replace(/\/+$/,'');
+  if(!/\/v\d+$/.test(b) && !/\/chat\/completions$/.test(b)) b += '/v1';
+  return b + '/chat/completions';
+}
+/* 把 HTTP 错误和网络错误区分开：前者是服务器明确回话（401/402/429…），后者是
+   请求根本没送出去。混在一起会把"Key 错了"误报成"网络被拒"，白白排查半天。 */
+async function httpError(res){
+  let detail = '';
+  try{ detail = String(await res.text() || '').slice(0, 300); }catch(e){}
+  const err = new Error('HTTP ' + res.status + ' ' + (res.statusText || '') + (detail ? ' — ' + detail : ''));
+  err.isHttp = true;
+  return err;
+}
+
+/** 一次性（非流式）请求。 */
+async function complete(messages, temperature){
+  const res = await fetch(endpoint(), {
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+S.apiKey},
+    body: JSON.stringify({ model: S.model, messages, temperature, stream:false })
+  });
+  if(!res.ok) throw await httpError(res);
+  const j = await res.json();
+  return j.choices?.[0]?.message?.content || '';
+}
+
+/** 流式请求。onDelta(delta, full) 每收到一段就回调。 */
+async function streamComplete(messages, temperature, onDelta){
+  const res = await fetch(endpoint(), {
+    method:'POST',
+    headers:{'Content-Type':'application/json','Authorization':'Bearer '+S.apiKey},
+    body: JSON.stringify({ model: S.model, messages, temperature, stream:true })
+  });
+  if(!res.ok) throw await httpError(res);
+  if(!res.body || typeof res.body.getReader !== 'function'){
+    throw new Error('该响应不支持流式读取（res.body 不可用）');
+  }
+  const reader = res.body.getReader(), dec = new TextDecoder();
+  let buf = '', full = '';
+  for(;;){
+    const { done, value } = await reader.read();
+    if(done) break;
+    buf += dec.decode(value, { stream:true });
+    const parts = buf.split('\n'); buf = parts.pop();
+    for(const line of parts){
+      const t = line.trim();
+      if(!t.startsWith('data:')) continue;
+      const d = t.slice(5).trim();
+      if(d === '[DONE]') continue;
+      try{
+        const j = JSON.parse(d);
+        const delta = j.choices?.[0]?.delta?.content;
+        if(delta){ full += delta; if(onDelta) onDelta(delta, full); }
+      }catch(e){}
+    }
+  }
+  return full;
+}
+
+/**
+ * 统一入口，签名与原来一致，调用方不用改。
+ *
+ * 关键行为：流式失败且**还没吐出任何内容**时，自动退回一次性请求再试。
+ * 有些网络路径会掐掉 SSE 长连接（代理缓冲、iOS 隐私中继、部分运营商），
+ * 但普通 POST 是通的——不补这一步，用户就只看到一句"网络被拒绝"。
+ * 已经出过字就不重试：否则内容会被推翻重来，还多花一次钱。
+ */
+async function llm(messages, {stream=false, onDelta, temperature}={}){
+  if(!S.apiKey){ throw new Error('NO_KEY'); }
+  const temp = temperature !== undefined ? temperature : Number(S.temp);
+  if(!stream) return complete(messages, temp);
+
+  let received = false;
+  try{
+    return await streamComplete(messages, temp, (delta, full)=>{
+      received = true;
+      if(onDelta) onDelta(delta, full);
+    });
+  }catch(e){
+    if(received || e.isHttp) throw e;   // 服务器已明确回话，或内容已出，不重试
+    console.warn('[nuwa] 流式失败，回退为一次性请求：', e);
+    const full = await complete(messages, temp);
+    if(onDelta) onDelta(full, full);
+    return full;
+  }
+}
+
+/* =========================== 路由器 =========================== */
+function kbBrief(){
+  return KB.map(k=>[
+    `id: ${k.id} | ${k.name} | 领域:${k.grp}`,
+    `  适用: ${k.bestFor.join('、')}`,
+    `  不适用: ${(k.avoidFor||['—']).join('、')}`,
+    `  核心心智模型: ${k.models.map(m=>m.split('——')[0].split('（')[0].trim()).join(' / ')}`,
+    `  关键边界: ${k.boundary.replace(/\*\*/g,'').slice(0,190)}…`,
+    `  调研截止: ${k.cutoff}`
+  ].join('\n')).join('\n\n');
+}
+
+const ROUTER_SYS = `你是「女娲」(huashu-nuwa) 的路由器。
+
+女娲的方法论：蒸馏的不是"一个人说了什么"，而是"他怎么想"——每个技能是一套可运行的认知操作系统（心智模型 + 决策启发式 + 表达 DNA + 反模式 + 诚实边界）。
+
+你的唯一任务：分析用户的问题，从技能库中选出最合适的 1–3 个技能（大多数情况只选 1 个；只有当问题明确跨域、且单一框架会漏掉关键维度时才选 2–3 个），并说明理由。
+
+【判断顺序，必须遵守】
+1. 先判断问题类型（problemType），从这些里选最贴切的一个：
+   产品取舍 / 创业判断 / 组织与机制 / 成本工程 / 投资判断 / 风险管理 / 财富与人生选择 / 学习方法 / 概念理解 / AI 技术判断 / 内容与增长 / 传播与舆论 / 教育与职业选择 / 谈判与博弈
+2. 再按领域匹配技能。
+3. 【关键】逐个检查候选技能的「不适用」和「关键边界」。若问题落在某个技能的 avoidFor 内，**必须排除它**，不要因为名气而选。
+   例：用芒格分析 AI 技术路线是错的（他的科技盲区是结构性的）；用马斯克分析公关危机是错的（他在这类领域系统性失效）；用张雪峰给家境优越、想读博的人做规划是错的。
+4. 若问题本身横跨两个领域且各有明确优势，选 2 个并说明分工。
+5. 若所有技能都不太合适 —— 选最接近的那个，但在 note 里诚实说明"没有完全对口的框架，这是最近的选择"。
+
+【输出格式】只输出一个 JSON 对象，不要任何解释、不要 markdown 代码围栏：
+{
+  "problemType": "问题类型",
+  "picks": [{"id":"技能id","confidence":0.0到1.0,"why":"一句话说明为什么用它"}],
+  "why": "两三句话：这个问题的本质是什么，为什么这个/这些框架能解决它",
+  "note": "如果存在边界风险、时效性风险或没有完全对口框架，在这里说明；没有则留空字符串"
+}
+
+【技能库】
+${kbBrief()}`;
+
+async function route(question){
+  const raw = await llm(
+    [{role:'system',content:ROUTER_SYS},{role:'user',content:question}],
+    {stream:false, temperature:0.1}
+  );
+  let txt = String(raw).trim();
+  txt = txt.replace(/^```(?:json)?\s*/i,'').replace(/```\s*$/,'').trim();
+  const a = txt.indexOf('{'), b = txt.lastIndexOf('}');
+  if(a>=0 && b>a) txt = txt.slice(a,b+1);
+  let obj;
+  try{ obj = JSON.parse(txt); }
+  catch(e){ throw new Error('路由解析失败，模型返回：'+String(raw).slice(0,300)); }
+  if(!Array.isArray(obj.picks)) obj.picks = [];
+  obj.picks = obj.picks.filter(p=>p && KB.some(k=>k.id===p.id)).slice(0,3);
+  if(!obj.picks.length) obj.picks = [{id:'feynman',confidence:0.3,why:'路由未命中，回退到通用思维拆解'}];
+  return obj;
+}
+
+/* =========================== 执行器 prompt =========================== */
+function buildExecutorSys(picks){
+  const full = picks.map(p=>{
+    const k = KB.find(x=>x.id===p.id);
+    return [
+      `### ${k.ico} ${k.name}（${k.grp}）`,
+      `核心心智模型：`,
+      ...k.models.map((m,i)=>`  ${i+1}. ${m}`),
+      `决策启发式：${k.heuristics.join('；')}`,
+      `适用：${k.bestFor.join('、')}`,
+      `【绝对不该用它的时候】${(k.avoidFor||['—']).join('、')}`,
+      `【诚实边界（必须遵守）】${k.boundary}`
+    ].join('\n');
+  }).join('\n\n');
+
+  return `你现在是「女娲」选定的思维框架执行器。女娲不复制人，它提取认知操作系统。
+
+用户的问题已经由路由器分析完毕：
+${picks.map(p=>`- 选定 ${KB.find(k=>k.id===p.id).name}：${p.why||''}`).join('\n')}
+
+【执行规则，逐条遵守】
+1. 只使用下面这些技能的心智模型和决策启发式来思考。**不要用通用 AI 助手的中立腔调**，也不要复读名人语录。
+2. 开头第一行输出路由标记，格式严格如下（单独一行）：
+   \`> 🧭 女娲路由 · <技能名>\` —— 如果选了多个，用「 + 」连接。
+   紧跟一行斜体说明为什么用这个视角。
+3. 正文必须**具体应用至少 2 个列出的核心心智模型**，并自然体现；不要只提名字，要真的用它推理用户的问题。
+4. 结论先行。中文。不要"这是一个很好的问题"这类客套。不要自称"我是XX本人"。
+5. 如果问题触及该技能的【绝对不该用它的时候】或【诚实边界】，**必须在回答结尾用「⚠️ 边界提示」明确说出来**——这是女娲的核心原则：一个不告诉你局限在哪的 Skill，不值得信任。若不触及，就不要硬凑。
+6. 涉及时效性的判断（技术趋势、算法、市场），提示"调研截止 2026-04，此后的变化未覆盖"。
+7. 允许并鼓励说"这一点这个框架看不到，需要补充别的视角"，但要指明补什么。
+
+【本次选定的技能全文】
+${full}`;
+}
+
+/* =========================== 发送主流程 =========================== */
+async function send(){
+  if(busy) return;
+  const q = $('#q').value.trim();
+  if(!q) return;
+  if(!S.apiKey){ openSettings(); $('#testStatus').textContent='请先填写 API Key'; $('#testStatus').className='status bad'; return; }
+
+  busy = true; $('#send').disabled = true;
+  $('#q').value=''; $('#q').style.height='auto';
+  if($('#stream').querySelector('.welcome')) $('#stream').innerHTML='';
+
+  addMsg('user', esc(q).replace(/\n/g,'<br>'), 'user');
+  const shell = botShell();
+  const showRoute = $('#showRoute').checked;
+  if(!showRoute) shell.route.style.display='none';
+  toBottom();
+
+  let picks, routeObj;
+  try{
+    if(locked){
+      const k = KB.find(x=>x.id===locked);
+      routeObj = {problemType:'手动锁定', picks:[{id:k.id,confidence:1,why:'你手动锁定了这个技能'}],
+                  why:`已手动锁定 **${k.name}**，跳过自动路由。`, note:''};
+    } else {
+      shell.route.innerHTML = routeCard({picks:[], why:'正在判断问题类型并匹配思维框架…'}, true);
+      toBottom();
+      routeObj = await route(q);
+    }
+    picks = routeObj.picks.map(p=>({...p, name: KB.find(k=>k.id===p.id).name}));
+    shell.route.innerHTML = routeCard(routeObj, false);
+    toBottom();
+  }catch(e){
+    busy=false; $('#send').disabled=false;
+    shell.route.innerHTML='';
+    shell.ans.outerHTML = `<div class="err"><b>路由失败：</b>${esc(errMsg(e))}</div>`;
+    return;
+  }
+
+  // 组装上下文（最近 6 轮，用于理解指代）
+  const msgs = [{role:'system', content: buildExecutorSys(picks)}];
+  history.slice(-6).forEach(h=>{
+    if(h.role==='user' || h.role==='assistant') msgs.push({role:h.role, content:h.content});
+  });
+  msgs.push({role:'user', content:q});
+
+  let acc='';
+  try{
+    await llm(msgs, {stream:true, onDelta:(d, full)=>{
+      acc = full; shell.ans.innerHTML = md(full); toBottom();
+    }});
+  }catch(e){
+    shell.ans.innerHTML = `<div class="err"><b>生成失败：</b>${esc(errMsg(e))}</div>`;
+    busy=false; $('#send').disabled=false; return;
+  }
+
+  history.push({role:'user', content:q});
+  history.push({role:'assistant', content:acc});
+  saveHistory();
+
+  // 存进右侧历史栏
+  const rec = {
+    id: 'r' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6),
+    ts: Date.now(),
+    q: q,
+    a: acc,
+    route: routeObj,
+    picks: picks.map(p => {
+      const k = KB.find(x => x.id === p.id) || {};
+      return { id: p.id, name: p.name, ico: k.ico || '' };
+    }),
+  };
+  records.unshift(rec);
+  if(records.length > 200) records.length = 200;
+  activeId = rec.id;
+  renderHistory();
+  await histOp({op:'add', record: rec});
+  renderHistory();
+
+  busy=false; $('#send').disabled=false; $('#q').focus();
+}
+
+function errMsg(e){
+  const name = (e && e.name) || '错误';
+  const msg = String((e && e.message) || e);
+  if(msg === 'NO_KEY') return '未填写 API Key，点击右上角「⚙ 设置」。';
+  if(e && e.isHttp) return msg;   // 服务器明确回了状态码，直接展示，别加戏
+  // 只有真正的网络层失败才给排查建议。之前这里把**所有** TypeError 都归成网络
+  // 问题，连代码自己抛的异常也被伪装成"网络被拒绝"，等于把线索掐断了。
+  if(/Failed to fetch|NetworkError|load failed|network error/i.test(name + ': ' + msg)){
+    return '请求没能发到服务器。\n原始错误：' + name + ': ' + msg +
+      '\n\n逐项排查（⚙ 设置 →「诊断」可自动检测）：\n' +
+      '① 接口地址：' + (S.baseUrl || '(空)') + '\n' +
+      '② 该地址是否允许浏览器直连（CORS）\n' +
+      '③ 当前网络 / 代理是否拦截';
+  }
+  return name + ': ' + msg;
+}
+
+/* =========================== 设置 =========================== */
+function openSettings(){
+  $('#fBase').value=S.baseUrl; $('#fKey').value=S.apiKey;
+  $('#fModel').value=S.model; $('#fTemp').value=S.temp;
+  $('#testStatus').textContent=''; $('#testStatus').className='status';
+  const d = $('#diagOut'); if(d){ d.textContent=''; d.classList.remove('on'); }
+  $('#settingsOverlay').classList.add('on');
+}
+function closeSettings(){ $('#settingsOverlay').classList.remove('on'); }
+function readForm(){
+  return {
+    baseUrl: $('#fBase').value.trim() || 'https://api.deepseek.com/v1',
+    apiKey: $('#fKey').value.trim(),
+    model: $('#fModel').value.trim() || 'deepseek-chat',
+    temp: Math.max(0, Math.min(2, parseFloat($('#fTemp').value) || 0.7))
+  };
+}
+function saveSettings(){
+  S = readForm();
+  localStorage.setItem(LS_S, JSON.stringify(S));
+  $('#modelTag').textContent = S.model + ' · ' + S.baseUrl.replace(/^https?:\/\//,'');
+  closeSettings();
+}
+async function testConnection(){
+  const st = $('#testStatus');
+  const bak = S; S = readForm();
+  st.className='status'; st.textContent='测试中…';
+  try{
+    const r = await llm([{role:'user',content:'回复两个字：可用'}], {stream:false, temperature:0});
+    st.className='status ok'; st.textContent='✓ 连接正常：'+String(r).trim().slice(0,20);
+  }catch(e){
+    st.className='status bad'; st.textContent='✗ '+errMsg(e).split('\n')[0];
+    S = bak;
+    return;
+  }
+  S = bak;
+}
+
+/**
+ * 逐项诊断：把「请求到底卡在哪一步」一次问清楚。
+ * 之前只有一句笼统的"网络被拒绝"，既分不清是地址错、CORS、还是流式被拦，
+ * 也看不到真实异常。这个按钮把每一层的原始结果都摊开。
+ */
+async function diagnose(){
+  const box = $('#diagOut');
+  if(!box) return;
+  const lines = [];
+  const add = (s)=>{
+    lines.push(s);
+    box.textContent = lines.join('\n');
+    box.classList.add('on');
+    box.scrollTop = box.scrollHeight;
+  };
+  box.textContent = ''; box.classList.add('on');
+
+  const bak = S; S = readForm();   // 用表单里的当前值诊断，不必先保存
+  const restore = ()=>{ S = bak; };
+
+  add('── 配置 ─────────────────────');
+  add('接口地址 : ' + (S.baseUrl || '(空)'));
+  add('实际 URL : ' + endpoint());
+  add('模型     : ' + S.model);
+  add('Key      : ' + (S.apiKey ? '已填（' + S.apiKey.length + ' 字符）' : '未填'));
+  add('页面来源 : ' + location.origin);
+  add('');
+
+  add('── ① 跨域预检 ──────────────');
+  try{
+    const t0 = performance.now();
+    const r = await fetch(endpoint(), {
+      method:'OPTIONS',
+      headers:{ 'Access-Control-Request-Method':'POST', 'Access-Control-Request-Headers':'authorization,content-type' }
+    });
+    add('HTTP ' + r.status + '，完成 ' + Math.round(performance.now()-t0) + 'ms');
+    add('→ 请求能发出去且被服务器接受，CORS 没有拦（ACAO 头读不到是浏览器规定，正常）。');
+  }catch(e){
+    add('失败: ' + (e.name||'') + ': ' + (e.message||e));
+    add('→ 请求根本没发出去：地址写错 / DNS 解析不了 / 网络被拦 / CORS 被拒。');
+  }
+  add('');
+
+  add('── ② 非流式请求 ─────────────');
+  try{
+    const t0 = performance.now();
+    const txt = await complete([{role:'user',content:'回复两个字：可用'}], 0);
+    add('成功 (' + Math.round(performance.now()-t0) + 'ms) → ' + JSON.stringify(String(txt).trim().slice(0,40)));
+  }catch(e){
+    add('失败: ' + (e.name||'') + ': ' + (e.message||e));
+  }
+  add('');
+
+  add('── ③ 流式请求 ───────────────');
+  let n = 0;
+  try{
+    const t0 = performance.now();
+    await streamComplete([{role:'user',content:'从1数到5'}], 0, ()=>{ n++; });
+    add('成功 (' + Math.round(performance.now()-t0) + 'ms)，收到 ' + n + ' 个增量');
+  }catch(e){
+    add('失败: ' + (e.name||'') + ': ' + (e.message||e));
+    add('→ 页面会自动退回非流式，功能仍可用（② 成功即代表能用）。');
+  }
+  add('');
+
+  add('── 环境 ─────────────────────');
+  add('流式读取支持: ' + (typeof ReadableStream !== 'undefined' ? '有' : '无'));
+  add('User-Agent : ' + navigator.userAgent);
+  add('');
+  add('诊断完成。以上整段发给维护者即可定位。');
+  restore();
+}
+
+/* =========================== 历史 =========================== */
+function saveHistory(){
+  try{ localStorage.setItem(LS_H, JSON.stringify(history.slice(-40))); }catch(e){}
+}
+function loadHistory(){
+  try{ const h = JSON.parse(localStorage.getItem(LS_H)||'[]'); if(Array.isArray(h)) history = h; }catch(e){}
+}
+function replay(){
+  if(!history.length){ welcome(); return; }
+  $('#stream').innerHTML='';
+  history.forEach(h=>{
+    if(h.role==='user') addMsg('user', esc(h.content).replace(/\n/g,'<br>'), 'user');
+    else {
+      const d=document.createElement('div'); d.className='msg bot';
+      d.innerHTML='<div class="bubble md">'+md(h.content)+'</div>';
+      $('#stream').appendChild(d);
+    }
+  });
+  toBottom();
+}
+function newThread(){
+  activeId = null;
+  history = []; saveHistory();
+  $('#stream').innerHTML='';
+  welcome();
+  renderHistory();
+  $('#q').focus();
+}
+
+/* ============ 右侧历史记录（localStorage 持久化） ============ */
+/* 历史记录优先存宿主侧（/nuwa-history，落盘成 JSON 文件，换浏览器/清缓存都不丢）；
+   接口不可用时自动回退到 localStorage。
+   独立版（静态托管 / 可安装 PWA）没有宿主接口，由构建脚本注入
+   window.__NUWA_STANDALONE__，直接走本机存储，省掉一次必然 404 的请求。 */
+async function loadRecords(){
+  if(!window.__NUWA_STANDALONE__){
+    try{
+      const r = await fetch(HIST_API, {headers:{'Accept':'application/json'}});
+      if(!r.ok) throw new Error('HTTP ' + r.status);
+      const j = await r.json();
+      if(!Array.isArray(j.records)) throw new Error('返回格式不对');
+      records = j.records.filter(x => x && x.id && typeof x.q === 'string');
+      histMode = 'server';
+      return;
+    }catch(e){
+      histMode = 'local';
+    }
+  }else{
+    histMode = 'local';
+  }
+  try{
+    const r = JSON.parse(localStorage.getItem(LS_R)||'[]');
+    if(Array.isArray(r)) records = r.filter(x => x && x.id && typeof x.q === 'string');
+  }catch(e){}
+}
+function saveLocal(){
+  try{ localStorage.setItem(LS_R, JSON.stringify(records.slice(0,200))); return; }
+  catch(e){}
+  // 配额超了：砍掉一半再试一次，避免静默丢数据（回复很长时容易触发）
+  try{
+    records = records.slice(0, Math.max(1, Math.floor(records.length/2)));
+    localStorage.setItem(LS_R, JSON.stringify(records));
+    console.warn('历史记录超出 localStorage 配额，已裁剪到 ' + records.length + ' 条');
+  }catch(e2){
+    console.error('历史记录写入失败', e2);
+  }
+}
+/** 把一次操作发给宿主；失败则降级为本地存储。 */
+async function histOp(op){
+  if(histMode === 'server'){
+    try{
+      const r = await fetch(HIST_API, {
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body: JSON.stringify(op)
+      });
+      const j = await r.json().catch(()=>null);
+      if(!r.ok) throw new Error((j && j.error) || ('HTTP ' + r.status));
+      if(!Array.isArray(j.records)) throw new Error('返回格式不对');
+      records = j.records;
+      return;
+    }catch(e){
+      console.warn('宿主侧历史不可用，回退到 localStorage：', e.message || e);
+      histMode = 'local';
+      renderHistMode();
+    }
+  }
+  saveLocal();
+}
+function renderHistMode(){
+  const el = $('#histMode');
+  if(!el) return;
+  if(histMode === 'server'){
+    el.textContent = '宿主侧';
+    el.className = 'stor server';
+    el.title = '历史存在宿主侧 JSON 文件里，换浏览器 / 清缓存都不会丢';
+  }else{
+    el.textContent = '本机';
+    el.className = 'stor local';
+    el.title = '宿主接口不可用，历史暂存在本浏览器的 localStorage';
+  }
+}
+function fmtTime(ts){
+  const d = new Date(ts), p = n => String(n).padStart(2,'0');
+  return `${p(d.getMonth()+1)}/${p(d.getDate())} ${p(d.getHours())}:${p(d.getMinutes())}`;
+}
+function renderHistory(){
+  const box = $('#histList');
+  if(!box) return;
+  closeConfirm();   // 列表重绘时，任何待确认的删除都作废
+  const c = $('#histCount'); if(c) c.textContent = records.length;
+  if(!records.length){
+    box.innerHTML = '<div class="empty">还没有历史记录。<br>提问一次就会自动存进这里。</div>';
+    return;
+  }
+  box.innerHTML = records.map(r=>{
+    const skills = (r.picks||[]).map(p=>esc(p.name)).join(' + ');
+    return `<div class="rec ${activeId===r.id?'on':''}" data-id="${r.id}">
+      <div class="rq">${esc(String(r.q).slice(0,90))}</div>
+      <div class="rm"><span>${fmtTime(r.ts)}</span><span class="rskills">${skills||'—'}</span></div>
+      <span class="del" data-del="${r.id}" title="删除这条">×</span>
+    </div>`;
+  }).join('');
+  box.querySelectorAll('.rec').forEach(el=>{
+    el.onclick = (e)=>{
+      if(e.target.dataset && e.target.dataset.del) return;
+      openRecord(el.dataset.id);
+      autoCloseDrawers();
+    };
+  });
+  box.querySelectorAll('.del').forEach(el=>{
+    el.onclick = (e)=>{ e.stopPropagation(); askDelete(el.dataset.del, e); };
+  });
+}
+function openRecord(id){
+  const r = records.find(x => x.id === id);
+  if(!r) return;
+  activeId = id;
+  history = [{role:'user', content:r.q}, {role:'assistant', content:r.a}];
+  $('#stream').innerHTML='';
+  addMsg('user', esc(r.q).replace(/\n/g,'<br>'), 'user');
+  const shell = botShell();
+  if($('#showRoute').checked && r.route) shell.route.innerHTML = routeCard(r.route, false);
+  else shell.route.style.display='none';
+  shell.ans.innerHTML = md(r.a);
+  renderHistory();
+  toBottom();
+}
+async function deleteRecord(id){
+  records = records.filter(x => x.id !== id);
+  if(activeId === id) activeId = null;
+  renderHistory();
+  await histOp({op:'delete', id: id});
+  renderHistory();
+}
+
+/* ---- 删除确认气泡 ----
+   点 × 不直接删，先在光标旁弹一个「确认 / 取消」。
+   优先放光标右侧；右侧放不下就翻到左侧 —— 历史栏本来就贴着屏幕右边缘，
+   照字面摆"鼠标右侧"会直接顶出屏幕。键盘触发时（没有坐标）退回按钮位置。 */
+function askDelete(id, ev){
+  const pop = $('#confirmPop');
+  if(!pop || !id) return;
+  confirmFor = id;
+  pop.classList.add('on');            // 先显示，才能量出真实尺寸
+
+  const GAP = 12;
+  let cx, cy;
+  if(ev && typeof ev.clientX === 'number' && (ev.clientX || ev.clientY)){
+    cx = ev.clientX; cy = ev.clientY;
+  }else{
+    const btn = document.querySelector('.rec .del[data-del="' + id + '"]');
+    const r = btn ? btn.getBoundingClientRect() : { right: 24, top: 12, height: 18 };
+    cx = r.right; cy = r.top + (r.height || 18) / 2;
+  }
+
+  const w = pop.offsetWidth, h = pop.offsetHeight;
+  const vw = window.innerWidth, vh = window.innerHeight;
+
+  let left = cx + GAP;
+  if(left + w > vw - 6) left = cx - w - GAP;          // 右侧放不下 → 翻到左侧
+  left = Math.max(6, Math.min(left, vw - w - 6));
+  let top = cy - h / 2;                                // 垂直居中于光标
+  top = Math.max(6, Math.min(top, vh - h - 6));
+
+  pop.style.left = Math.round(left) + 'px';
+  pop.style.top = Math.round(top) + 'px';
+
+  const yes = $('#cpYes');
+  if(yes) yes.focus({ preventScroll: true });
+}
+function closeConfirm(){
+  confirmFor = null;
+  const pop = $('#confirmPop');
+  if(pop) pop.classList.remove('on');
+}
+function confirmDelete(){
+  const id = confirmFor;
+  closeConfirm();
+  if(id) deleteRecord(id);
+}
+async function clearHistory(){
+  if(!records.length) return;
+  if(!confirm('清空全部历史记录？此操作不可撤销（当前的 API 设置不受影响）。')) return;
+  records = []; activeId = null;
+  renderHistory();
+  await histOp({op:'clear'});
+  renderHistory();
+}
+
+/* =========================== 主题 =========================== */
+const LS_T='nuwa.theme';   // auto | light | dark
+function themePref(){
+  try{ return localStorage.getItem(LS_T) || 'auto'; }catch(e){ return 'auto'; }
+}
+function systemDark(){
+  return !!(window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches);
+}
+/** 让浏览器地址栏 / 状态栏颜色跟上当前主题。 */
+function syncThemeColor(){
+  const meta = document.getElementById('themeColorMeta');
+  if(!meta) return;
+  const bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim();
+  if(bg) meta.setAttribute('content', bg);
+}
+/** 把偏好落到 <html data-theme>；auto 时跟随系统。 */
+function applyTheme(){
+  const pref = themePref();
+  const dark = pref === 'dark' || (pref === 'auto' && systemDark());
+  document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+  syncThemeColor();
+  const b = $('#themeBtn');
+  if(b){
+    const label = pref === 'auto' ? '跟随系统' : (pref === 'dark' ? '夜晚' : '白天');
+    b.textContent = pref === 'auto' ? '🌗' : (pref === 'dark' ? '🌙' : '☀️');
+    b.title = '主题：' + label + '（点击切换 跟随系统 → 白天 → 夜晚）';
+    b.setAttribute('aria-label', b.title);
+  }
+}
+function cycleTheme(){
+  const order = ['auto','light','dark'];
+  const next = order[(order.indexOf(themePref()) + 1) % order.length];
+  try{ localStorage.setItem(LS_T, next); }catch(e){}
+  applyTheme();
+}
+
+/* =========================== 移动端交互 =========================== */
+/** 触屏设备（粗指针 + 无悬停）。决定 Enter 是发送还是换行。 */
+function isTouch(){
+  return !!(window.matchMedia && window.matchMedia('(hover: none) and (pointer: coarse)').matches);
+}
+/** 窄视口：此时两侧栏是抽屉，而不是常驻列。 */
+function isNarrow(){
+  return !!(window.matchMedia && window.matchMedia('(max-width: 820px)').matches);
+}
+/** 收起两侧抽屉和遮罩。 */
+function closeDrawers(){
+  document.querySelectorAll('aside.skills-pane, aside.history').forEach(a => a.classList.remove('open'));
+  const s = document.getElementById('scrim');
+  if(s) s.classList.remove('on');
+}
+/** 开/关指定抽屉；打开时同时点亮遮罩，点遮罩即可关。 */
+function toggleDrawer(sel){
+  const el = document.querySelector(sel);
+  if(!el) return;
+  const willOpen = !el.classList.contains('open');
+  closeDrawers();
+  if(!willOpen) return;
+  el.classList.add('open');
+  const s = document.getElementById('scrim');
+  if(s) s.classList.add('on');
+}
+/** 窄视口下选完东西自动收起抽屉，把屏幕还给对话区。 */
+function autoCloseDrawers(){ if(isNarrow()) closeDrawers(); }
+
+/* =========================== 启动 =========================== */
+(async function init(){
+  try{ const s = JSON.parse(localStorage.getItem(LS_S)||'null'); if(s&&typeof s==='object') S={...S,...s}; }catch(e){}
+  loadHistory();
+  await loadRecords();
+  renderSkills(); updateLockBtn();
+  $('#modelTag').textContent = S.model + ' · ' + S.baseUrl.replace(/^https?:\/\//,'');
+  renderHistory();
+  renderHistMode();
+  applyTheme();
+  replay();
+
+  // 系统主题变化时，只要当前是「跟随系统」就同步刷新
+  if(window.matchMedia){
+    try{
+      window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', ()=>{
+        if(themePref() === 'auto') applyTheme();
+      });
+    }catch(e){}
+  }
+
+  $('#send').onclick = send;
+  const ta = $('#q');
+  ta.addEventListener('keydown', e=>{
+    if(e.key !== 'Enter') return;
+    // 中文输入法组合中：Enter 是选词，不是发送
+    if(e.isComposing || e.keyCode === 229) return;
+    // 触屏上 Enter 保持换行（手机键盘的 Enter 通常就是换行），发送交给按钮；
+    // 但 Ctrl/Cmd+Enter 仍然发送，方便外接键盘
+    if(isTouch() && !(e.ctrlKey || e.metaKey)) return;
+    if(!e.shiftKey){ e.preventDefault(); send(); }
+  });
+  ta.addEventListener('input', ()=>{ ta.style.height='auto'; ta.style.height=Math.min(ta.scrollHeight,170)+'px'; });
+
+  // 视口变宽后抽屉不再适用，收起来免得遮罩挡住内容
+  window.addEventListener('resize', ()=>{
+    if(!isNarrow()) closeDrawers();
+    updateLockBtn();   // 锁定按钮的文案随宽度变化
+    closeConfirm();    // 位置按旧视口算的，作废
+  });
+
+  // 删除确认气泡的关闭路径：点别处 / Esc / 滚动列表
+  // （× 自己的点击已 stopPropagation，不会一弹出就被这里关掉）
+  document.addEventListener('click', (e)=>{
+    const pop = $('#confirmPop');
+    if(pop && pop.classList.contains('on') && !pop.contains(e.target)) closeConfirm();
+  });
+  document.addEventListener('keydown', (e)=>{
+    if(e.key === 'Escape'){ closeConfirm(); closeDrawers(); }
+  });
+  const hl = $('#histList');
+  if(hl) hl.addEventListener('scroll', closeConfirm, { passive: true });
+
+  // 键盘弹出时用 visualViewport 精确对齐容器高度，否则输入框会被键盘挡在下面。
+  // 只在触屏上启用，避免桌面端无谓的抖动。
+  if(isTouch() && window.visualViewport){
+    const vv = window.visualViewport;
+    const sync = ()=> document.documentElement.style.setProperty('--app-h', Math.round(vv.height) + 'px');
+    vv.addEventListener('resize', sync);
+    vv.addEventListener('scroll', sync);
+    sync();
+  }
+  $('#settingsOverlay').addEventListener('click', e=>{ if(e.target.id==='settingsOverlay') closeSettings(); });
+  document.querySelectorAll('.overlay .modal').forEach(m=>m.addEventListener('click',e=>e.stopPropagation()));
+
+  if(!S.apiKey){ setTimeout(()=>{ openSettings(); $('#testStatus').textContent='首次使用：请先填写 API Key'; }, 300); }
+  ta.focus();
+})();
+</script>
+
+<script>
+if('serviceWorker' in navigator){
+  window.addEventListener('load', function(){
+    navigator.serviceWorker.register('./sw.js').catch(function(e){ console.warn('SW 注册失败：', e) })
+  })
+}
+</script>
+</body>
+</html>
