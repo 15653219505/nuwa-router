@@ -1,0 +1,31 @@
+{
+  "name": "女娲路由 · Nuwa Perspective Router",
+  "short_name": "女娲路由",
+  "description": "按问题类型调度思维框架：路由 → 执行 → 边界",
+  "lang": "zh-CN",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f5efe0",
+  "theme_color": "#f5efe0",
+  "icons": [
+    {
+      "src": "./icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "./icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ]
+}
